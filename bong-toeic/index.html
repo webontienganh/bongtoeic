@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BÔNG TOEIC - Pink Edition</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'] 
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff6f8',
+                            100: '#fce7ef',
+                            200: '#f9cfdf',
+                            300: '#f4b5c4',
+                            400: '#f472b6',
+                            500: '#ec4899',
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#fff6f8] text-slate-800 h-full flex flex-col antialiased selection:bg-pink-200 selection:text-pink-900">
+
+    <!-- HEADER NAVIGATION -->
+    <header class="bg-white/90 backdrop-blur border-b border-pink-100 sticky top-0 z-50 shadow-sm shadow-pink-50/50">
+        <div class="max-w-[1500px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+            
+            <!-- Logo bên trái -->
+            <div class="flex items-center space-x-3 cursor-pointer shrink-0" onclick="navigateTo('dashboard')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-400 via-rose-400 to-pink-300 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-pink-200">
+                    🌸
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 bg-clip-text text-transparent">BÔNG TOEIC</span>
+                    <span class="hidden xl:inline-block text-xs font-semibold px-2 py-0.5 ml-1 bg-pink-50 text-pink-700 rounded-full border border-pink-200/60">Pink</span>
+                </div>
+            </div>
+
+            <!-- Menu điều hướng trải dài ở giữa -->
+            <nav class="hidden lg:flex items-center space-x-0.5 xl:space-x-1 overflow-x-auto no-scrollbar">
+                <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-semibold text-slate-700 hover:bg-pink-50 transition flex items-center space-x-1 bg-pink-100/80 text-pink-700 shrink-0">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Trang chủ</span>
+                </button>
+                <button onclick="navigateTo('vocabularySets')" id="nav-vocabularySets" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="book-open" class="w-4 h-4"></i><span>Từ vựng</span>
+                </button>
+                <button onclick="navigateTo('studyVocabulary')" id="nav-studyVocabulary" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="brain" class="w-4 h-4"></i><span>Ôn SRS</span>
+                </button>
+                <button onclick="navigateTo('exam')" id="nav-exam" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="award" class="w-4 h-4"></i><span>Luyện đề</span>
+                </button>
+                <button onclick="navigateTo('testBuilder')" id="nav-testBuilder" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="folder-kanban" class="w-4 h-4"></i><span>Kho đề</span>
+                </button>
+                <button onclick="navigateTo('grammarDrill')" id="nav-grammarDrill" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i><span>Luyện GP</span>
+                </button>
+                <button onclick="navigateTo('grammarExam')" id="nav-grammarExam" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="timer" class="w-4 h-4"></i><span>Thi GP</span>
+                </button>
+                <button onclick="navigateTo('grammarManager')" id="nav-grammarManager" class="nav-btn px-2.5 py-2 rounded-xl text-xs xl:text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-600 transition flex items-center space-x-1 shrink-0">
+                    <i data-lucide="folder-plus" class="w-4 h-4"></i><span>Kho GP</span>
+                </button>
+            </nav>
+
+            <!-- Cụm bên phải (Streak & Đăng nhập) -->
+            <div class="flex items-center space-x-3 shrink-0">
+                <div class="flex items-center bg-pink-50 border border-pink-200/70 px-2.5 py-1.5 rounded-full shadow-2xs">
+                    <span class="text-pink-500 animate-bounce mr-1 text-base">🔥</span>
+                    <span id="streak-header-count" class="font-bold text-pink-800 text-xs sm:text-sm">1</span>
+                    <span class="text-[11px] text-pink-600 ml-1 font-medium hidden sm:inline">ngày</span>
+                </div>
+
+                <div id="auth-container" class="flex items-center space-x-2">
+                    <button id="btn-login-google" onclick="window.loginWithGoogle()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-pink-500 to-rose-400 hover:opacity-95 text-white rounded-xl text-xs font-semibold shadow-sm shadow-pink-200 transition">
+                        <svg class="w-4 h-4 bg-white rounded-full p-0.5 shrink-0" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Đăng nhập</span>
+                    </button>
+
+                    <div id="user-profile-menu" class="hidden flex items-center space-x-2">
+                        <img id="user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border border-pink-300 shadow-xs object-cover">
+                        <button onclick="window.logoutGoogle()" class="p-1.5 text-slate-400 hover:text-pink-600 rounded-lg hover:bg-pink-50 transition" title="Đăng xuất">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Nơi nhúng HTML View linh hoạt -->
+    <main id="main-app" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 overflow-y-auto"></main>
+
+    <!-- BOTTOM NAVIGATION CHỈ HIỂN THỊ TRÊN MOBILE (ẨN TRÊN LAPTOP/DESKTOP) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-pink-100 flex items-center overflow-x-auto no-scrollbar py-2 px-3 space-x-2 shadow-lg shadow-pink-100">
+        <button onclick="navigateTo('dashboard')" id="bottom-nav-dashboard" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-pink-600 font-bold shrink-0">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Trang chủ</span>
+        </button>
+        <button onclick="navigateTo('vocabularySets')" id="bottom-nav-vocabularySets" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="book-open" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Từ vựng</span>
+        </button>
+        <button onclick="navigateTo('studyVocabulary')" id="bottom-nav-studyVocabulary" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="brain" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Ôn SRS</span>
+        </button>
+        <button onclick="navigateTo('exam')" id="bottom-nav-exam" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="award" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Luyện đề</span>
+        </button>
+        <button onclick="navigateTo('testBuilder')" id="bottom-nav-testBuilder" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="folder-kanban" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Kho đề</span>
+        </button>
+        <button onclick="navigateTo('grammarDrill')" id="bottom-nav-grammarDrill" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="sparkles" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Luyện GP</span>
+        </button>
+        <button onclick="navigateTo('grammarExam')" id="bottom-nav-grammarExam" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="timer" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Thi GP</span>
+        </button>
+        <button onclick="navigateTo('grammarManager')" id="bottom-nav-grammarManager" class="nav-btn flex flex-col items-center justify-center min-w-[64px] py-1 text-slate-500 hover:text-pink-600 shrink-0">
+            <i data-lucide="folder-plus" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px]">Kho GP</span>
+        </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-2 text-sm font-medium">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toast-message">Thành công!</span>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container"></div>
+
+    <!-- 1. Dữ liệu từ vựng cộng đồng (nạp trước tiên) -->
+    <script src="js/vocabulary/vocabulary-ets2026.js"></script>
+    <script src="js/vocabulary/vocabulary-study4.js"></script>
+    <script src="js/vocabulary/vocabulary-3000tuvungtienganhthongdungnhat.js"></script>
+    <script src="js/vocabulary/vocabulary-collocations.js"></script>
+    <script src="js/vocabulary/vocabulary-idioms.js"></script>
+
+    <!-- 2. Logic App và State chính (khai báo các hàm getMyFolders, getCommunityFolders...) -->
+    <script src="js/app.js"></script>
+    <script src="js/services/grammarStore.js"></script>
+
+    <!-- 3. Các View Scripts (gọi các hàm từ app.js) -->
+    <script src="js/views/dashboardView.js"></script>
+    <script src="js/views/vocabularySetsView.js"></script>
+    <script src="js/views/studyVocabularyView.js"></script>
+    <script src="js/views/examView.js"></script>
+    <script src="js/views/examPlayerView.js"></script>
+    <script src="js/views/examResultView.js"></script>
+    <script src="js/views/testBuilderView.js"></script>
+    <script src="js/views/grammarDrillView.js"></script>
+    <script src="js/views/grammarExamView.js"></script>
+    <script src="js/views/grammarManagerView.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script>
+        // Kích hoạt lại icon dự phòng ngay sau khi nạp toàn bộ View
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>
