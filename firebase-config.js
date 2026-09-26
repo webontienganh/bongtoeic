@@ -46,14 +46,14 @@ onAuthStateChanged(auth, async (user) => {
         await loadUserDataFromCloud(user.uid);
 
         // Lắng nghe thay đổi thời gian thực từ Firestore
+        // Lắng nghe thay đổi thời gian thực từ Firestore
         unsubscribeUserDoc = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 let hasChanges = false;
 
-                // Lấy dữ liệu ngữ pháp từ Cloud
                 const cloudFolders = data.grammarFolders || data.folders || [];
-                const localFoldersStr = localStorage.getItem('bong_grammar_my_folders') || localStorage.getItem('bong_my_folders') || '[]';
+                const localFoldersStr = localStorage.getItem('bong_grammar_my_folders') || '[]';
                 const cloudFoldersStr = JSON.stringify(cloudFolders);
 
                 if (cloudFoldersStr !== localFoldersStr && cloudFolders.length > 0) {
@@ -62,10 +62,24 @@ onAuthStateChanged(auth, async (user) => {
                     hasChanges = true;
                 }
 
+                // Kiểm tra thêm dữ liệu câu hỏi ngữ pháp
+                const cloudQuestions = data.grammarQuestions || [];
+                const localQuestionsStr = localStorage.getItem('bong_grammar_questions') || '[]';
+                const cloudQuestionsStr = JSON.stringify(cloudQuestions);
+
+                if (cloudQuestionsStr !== localQuestionsStr && cloudQuestions.length > 0) {
+                    localStorage.setItem('bong_grammar_questions', cloudQuestionsStr);
+                    hasChanges = true;
+                }
+
+                // Tự động làm mới trang nếu có thay đổi và người dùng đang đứng ở mục ngữ pháp
                 if (hasChanges && typeof navigateTo === 'function') {
                     const currentView = window.appState && appState.currentView ? appState.currentView : 'dashboard';
                     if (currentView.startsWith('grammar') || currentView === 'dashboard') {
                         navigateTo(currentView);
+                        if (typeof showToast === 'function') {
+                            showToast("Đã đồng bộ dữ liệu ngữ pháp mới từ thiết bị khác!");
+                        }
                     }
                 }
             }
