@@ -1,3 +1,12 @@
+// Danh sách cấu hình các ảnh bìa - Dễ dàng mở rộng thêm hình ảnh mới ở đây
+const BANNER_THEMES = [
+    { id: 'default', name: 'Khung màu hồng', type: 'gradient', value: 'bg-gradient-to-r from-pink-400 via-rose-400 to-pink-300' },
+    { id: 'hinh1', name: 'Hình 1', type: 'image', value: 'hinh1.jpg' },
+    { id: 'hinh2', name: 'Hình 2', type: 'image', value: 'hinh2.jpg' },
+    { id: 'hinh3', name: 'Hình 3', type: 'image', value: 'hinh3.jpg' },
+    { id: 'hinh4', name: 'Hình 4', type: 'image', value: 'hinh4.png' },
+];
+
 const dashboardView = {
     // Hàm phụ trợ: Lấy chuỗi YYYY-MM-DD theo giờ địa phương (Local Time)
     getLocalDateString(dateInput = new Date()) {
@@ -30,22 +39,17 @@ const dashboardView = {
             console.error('Lỗi đọc dữ liệu hoạt động:', e);
         }
 
-        // Tính toán khoảng cách ngày để cập nhật streak
         if (data.lastActiveDate) {
             const lastDate = new Date(data.lastActiveDate);
             const today = new Date(todayStr);
             const diffTime = today.getTime() - lastDate.getTime();
             const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
 
-            if (diffDays === 0) {
-                // Đã truy cập hôm nay, giữ nguyên chuỗi
-            } else if (diffDays === 1) {
-                // Truy cập ngày liên tiếp -> Tăng chuỗi
+            if (diffDays === 1) {
                 data.currentStreak = (data.currentStreak || 0) + 1;
                 data.lastActiveDate = todayStr;
                 if (!data.activeDates.includes(todayStr)) data.activeDates.push(todayStr);
             } else if (diffDays > 1) {
-                // Bỏ lỡ ít nhất 1 ngày -> Reset chuỗi về 1
                 data.currentStreak = 1;
                 data.lastActiveDate = todayStr;
                 if (!data.activeDates.includes(todayStr)) data.activeDates.push(todayStr);
@@ -67,25 +71,21 @@ const dashboardView = {
         return data;
     },
 
-    // CẬP NHẬT TỨC THÌ CHO CẢ HAI VỊ TRÍ (NAVBAR Ở TRÊN VÀ WIDGET Ở DƯỚI)
     updateStreakRealtime() {
         const activity = this.getActivityData();
         const streakVal = activity.currentStreak || 0;
 
-        // Cập nhật chuỗi ở thanh Header/Navbar phía trên
         const streakHeader = document.getElementById('streak-header-count');
         if (streakHeader) {
             streakHeader.textContent = streakVal;
         }
 
-        // Cập nhật chuỗi ở widget Dashboard bên dưới
         const streakHome = document.getElementById('home-streak-num');
         if (streakHome) {
             streakHome.textContent = streakVal;
         }
     },
 
-    // Lấy thống kê số từ vựng từ bộ nhớ SRS thực tế (chuẩn theo lịch tự nhiên)
     getVocabStats() {
         let srs = {};
         try {
@@ -97,16 +97,10 @@ const dashboardView = {
 
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-
-        // Đầu tuần hiện tại (Thứ 2)
-        const currentDayOfWeek = now.getDay(); // 0: CN, 1: T2, ...
+        const currentDayOfWeek = now.getDay();
         const daysSinceMonday = (currentDayOfWeek === 0 ? 7 : currentDayOfWeek) - 1;
         const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday).getTime();
-
-        // Đầu tháng hiện tại
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-        // Đầu năm hiện tại
         const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
 
         const todayLearned = entries.filter(item => item.updatedAt && item.updatedAt >= startOfToday).length;
@@ -122,7 +116,6 @@ const dashboardView = {
         };
     },
 
-    // TÍNH TOÁN TIẾN ĐỘ LUYỆN ĐỀ HOÀN TOÀN THEO SỐ CÂU THỰC TẾ TRONG KHO ĐỀ
     getExamPartStats() {
         const totalQuestionsByPart = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
 
@@ -154,19 +147,14 @@ const dashboardView = {
 
         const p1Total = totalQuestionsByPart[1];
         const p1Done = Math.min(doneCounts[1], p1Total);
-
         const p2Total = totalQuestionsByPart[2];
         const p2Done = Math.min(doneCounts[2], p2Total);
-
         const p34Total = totalQuestionsByPart[3] + totalQuestionsByPart[4];
         const p34Done = Math.min(doneCounts[3] + doneCounts[4], p34Total);
-
         const p5Total = totalQuestionsByPart[5];
         const p5Done = Math.min(doneCounts[5], p5Total);
-
         const p6Total = totalQuestionsByPart[6];
         const p6Done = Math.min(doneCounts[6], p6Total);
-
         const p7Total = totalQuestionsByPart[7];
         const p7Done = Math.min(doneCounts[7], p7Total);
 
@@ -184,58 +172,19 @@ const dashboardView = {
         return {
             overallPercent,
             totalAll,
-            listening: {
-                total: listeningTotal,
-                done: listeningDone,
-                percent: getPercent(listeningDone, listeningTotal)
-            },
-            reading: {
-                total: readingTotal,
-                done: readingDone,
-                percent: getPercent(readingDone, readingTotal)
-            },
+            listening: { total: listeningTotal, done: listeningDone, percent: getPercent(listeningDone, listeningTotal) },
+            reading: { total: readingTotal, done: readingDone, percent: getPercent(readingDone, readingTotal) },
             parts: [
-                {
-                    name: 'Part 1: Photographs',
-                    total: p1Total,
-                    done: p1Done,
-                    percent: getPercent(p1Done, p1Total)
-                },
-                {
-                    name: 'Part 2: Question-Response',
-                    total: p2Total,
-                    done: p2Done,
-                    percent: getPercent(p2Done, p2Total)
-                },
-                {
-                    name: 'Part 3 & 4: Conversations & Talks',
-                    total: p34Total,
-                    done: p34Done,
-                    percent: getPercent(p34Done, p34Total)
-                },
-                {
-                    name: 'Part 5: Incomplete Sentences',
-                    total: p5Total,
-                    done: p5Done,
-                    percent: getPercent(p5Done, p5Total)
-                },
-                {
-                    name: 'Part 6: Text Completion',
-                    total: p6Total,
-                    done: p6Done,
-                    percent: getPercent(p6Done, p6Total)
-                },
-                {
-                    name: 'Part 7: Reading Comprehension',
-                    total: p7Total,
-                    done: p7Done,
-                    percent: getPercent(p7Done, p7Total)
-                }
+                { name: 'Part 1: Photographs', total: p1Total, done: p1Done, percent: getPercent(p1Done, p1Total) },
+                { name: 'Part 2: Question-Response', total: p2Total, done: p2Done, percent: getPercent(p2Done, p2Total) },
+                { name: 'Part 3 & 4: Conversations & Talks', total: p34Total, done: p34Done, percent: getPercent(p34Done, p34Total) },
+                { name: 'Part 5: Incomplete Sentences', total: p5Total, done: p5Done, percent: getPercent(p5Done, p5Total) },
+                { name: 'Part 6: Text Completion', total: p6Total, done: p6Done, percent: getPercent(p6Done, p6Total) },
+                { name: 'Part 7: Reading Comprehension', total: p7Total, done: p7Done, percent: getPercent(p7Done, p7Total) }
             ]
         };
     },
 
-    // Tạo HTML cho lịch hiển thị đầy đủ ngày trong tháng
     renderFullMonthCalendar(activeDates) {
         const now = new Date();
         const year = now.getFullYear();
@@ -247,7 +196,6 @@ const dashboardView = {
         const startOffset = (firstDayOfWeek === 0 ? 7 : firstDayOfWeek) - 1;
 
         let cellsHtml = '';
-
         const prevMonthDays = new Date(year, month, 0).getDate();
         for (let i = startOffset - 1; i >= 0; i--) {
             cellsHtml += `<div class="py-1.5 text-pink-200 font-medium text-[11px]">${prevMonthDays - i}</div>`;
@@ -295,6 +243,136 @@ const dashboardView = {
         `;
     },
 
+    // --- QUẢN LÝ ẢNH BÌA THEO MẢNG CẤU HÌNH ĐỘNG ---
+    getBannerChoice() {
+        return localStorage.getItem('bong_toeic_banner_choice') || 'default';
+    },
+
+    setBannerChoice(choice) {
+        localStorage.setItem('bong_toeic_banner_choice', choice);
+        const bannerContainer = document.getElementById('dashboard-banner-container');
+        if (bannerContainer) {
+            bannerContainer.outerHTML = this.renderBannerHtml();
+            if (window.lucide && lucide.createIcons) lucide.createIcons();
+        }
+    },
+
+    renderBannerHtml() {
+        const currentChoice = this.getBannerChoice();
+        const activeTheme = BANNER_THEMES.find(t => t.id === currentChoice) || BANNER_THEMES[0];
+
+        // Nếu là kiểu gradient mặc định
+        if (activeTheme.type === 'gradient') {
+            return `
+                <div id="dashboard-banner-container" class="lg:col-span-2 ${activeTheme.value} rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-pink-200/50 relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md border border-white/20">
+                                <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
+                                <span>Mục tiêu TOEIC 900+ năm 2026 (Pink Theme)</span>
+                            </div>
+                            <button onclick="dashboardView.openBannerSelector()" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/30 transition flex items-center space-x-1">
+                                <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                <span>Đổi ảnh bìa</span>
+                            </button>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold mb-2">Chào bạn! ✨</h1>
+                        <p class="text-pink-50 text-sm sm:text-base max-w-xl">Chào mừng bạn trở lại! Tiếp tục hành trình luyện đề và ôn tập từ vựng hôm nay nhé.</p>
+                    </div>
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <button onclick="navigateTo('exam')" class="bg-white text-pink-600 font-bold px-5 py-2.5 rounded-xl text-sm shadow-md shadow-pink-900/10 hover:bg-pink-50 transition flex items-center space-x-2">
+                            <i data-lucide="play-circle" class="w-4 h-4 text-pink-500"></i>
+                            <span>Tiếp tục luyện đề</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Nếu là kiểu ảnh nền (image)
+        return `
+            <div id="dashboard-banner-container" class="lg:col-span-2 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-pink-200/50 relative overflow-hidden flex flex-col justify-between bg-cover bg-center min-h-[260px]" style="background-image: url('${activeTheme.value}');">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md border border-white/20">
+                            <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
+                            <span>Mục tiêu TOEIC 900+ năm 2026</span>
+                        </div>
+                        <button onclick="dashboardView.openBannerSelector()" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/30 transition flex items-center space-x-1 shadow-sm">
+                            <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                            <span>Đổi ảnh bìa</span>
+                        </button>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold mb-2 drop-shadow-md">Chào bạn! ✨</h1>
+                    <p class="text-slate-100 text-sm sm:text-base max-w-xl drop-shadow">Chào mừng bạn trở lại! Tiếp tục hành trình luyện đề và ôn tập từ vựng hôm nay nhé.</p>
+                </div>
+                <div class="mt-6 flex flex-wrap gap-3 relative z-10">
+                    <button onclick="navigateTo('exam')" class="bg-white text-pink-600 font-bold px-5 py-2.5 rounded-xl text-sm shadow-md hover:bg-pink-50 transition flex items-center space-x-2">
+                        <i data-lucide="play-circle" class="w-4 h-4 text-pink-500"></i>
+                        <span>Tiếp tục luyện đề</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    openBannerSelector() {
+        const current = this.getBannerChoice();
+        
+        // Tự động sinh danh sách các lựa chọn ảnh bìa dựa trên mảng BANNER_THEMES
+        const themesHtml = BANNER_THEMES.map(theme => {
+            const isSelected = current === theme.id;
+            let previewBox = '';
+            
+            if (theme.type === 'gradient') {
+                previewBox = `<div class="h-20 ${theme.value} rounded-xl shadow-inner flex items-center justify-center text-white font-bold text-xs">Mặc định</div>`;
+            } else {
+                previewBox = `<div class="h-20 bg-cover bg-center rounded-xl shadow-inner border border-slate-200" style="background-image: url('${theme.value}');"></div>`;
+            }
+
+            return `
+                <div onclick="dashboardView.selectAndClose('${theme.id}')" class="cursor-pointer rounded-2xl p-3 border-2 ${isSelected ? 'border-pink-500 bg-pink-50/50' : 'border-slate-200 hover:border-pink-300'} transition text-center space-y-2">
+                    ${previewBox}
+                    <span class="text-xs font-semibold text-slate-700">${theme.name}</span>
+                </div>
+            `;
+        }).join('');
+
+        const html = `
+            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-pink-100 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-pink-50">
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center space-x-2">
+                        <i data-lucide="image" class="w-5 h-5 text-pink-500"></i>
+                        <span>Tùy chỉnh ảnh bìa trang chủ</span>
+                    </h3>
+                    <button onclick="closeModal()" class="p-1 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500">Lựa chọn kiểu hiển thị khung bìa phía trên trang chủ theo sở thích của bạn:</p>
+                
+                <div class="grid grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-1">
+                    ${themesHtml}
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">Đóng</button>
+                </div>
+            </div>
+        `;
+        openModal(html);
+    },
+
+    selectAndClose(choice) {
+        this.setBannerChoice(choice);
+        closeModal();
+        if (typeof showToast === 'function') {
+            showToast('Đã cập nhật ảnh bìa thành công!');
+        }
+    },
+
     render() {
         const activity = this.getActivityData();
         const vocabStats = this.getVocabStats();
@@ -315,7 +393,6 @@ const dashboardView = {
         const now = new Date();
         const currentMonthYear = `Tháng ${now.getMonth() + 1}/${now.getFullYear()}`;
 
-        // Lấy dữ liệu học thực tế từ LocalStorage theo từng ngày (tính theo giờ địa phương)
         let srsProgress = {};
         try {
             srsProgress = JSON.parse(localStorage.getItem('bong_toeic_srs_progress') || '{}');
@@ -329,7 +406,6 @@ const dashboardView = {
             }
         });
 
-        // Tạo danh sách 7 ngày vừa qua theo giờ địa phương
         const daysMap = [];
         const dayNames = ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
@@ -339,16 +415,11 @@ const dashboardView = {
             const dateStr = this.getLocalDateString(d);
             const isToday = (i === 0);
             const dayOfWeek = dayNames[d.getDay()];
-            // Đồng bộ: nếu là hôm nay thì lấy chuẩn theo vocabStats.today
             const count = isToday ? vocabStats.today : (actualDailyCounts[dateStr] || 0);
             const formattedDate = `${d.getDate()}/${d.getMonth() + 1}`;
             const label = isToday ? 'Hôm nay' : `${dayOfWeek} (${formattedDate})`;
 
-            daysMap.push({
-                label,
-                val: count,
-                isToday
-            });
+            daysMap.push({ label, val: count, isToday });
         }
 
         const sumCount = daysMap.reduce((acc, d) => acc + d.val, 0);
@@ -359,23 +430,7 @@ const dashboardView = {
             <div class="space-y-6">
                 <!-- Banner & Streak Tracker -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-gradient-to-r from-pink-400 via-rose-400 to-pink-300 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-pink-200/50 relative overflow-hidden flex flex-col justify-between">
-                        <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-                        <div>
-                            <div class="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md mb-4 border border-white/20">
-                                <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
-                                <span>Mục tiêu TOEIC 900+ năm 2026 (Pink Theme)</span>
-                            </div>
-                            <h1 class="text-2xl sm:text-3xl font-extrabold mb-2">Chào bạn! ✨</h1>
-                            <p class="text-pink-50 text-sm sm:text-base max-w-xl">Chào mừng bạn trở lại! Tiếp tục hành trình luyện đề và ôn tập từ vựng hôm nay nhé.</p>
-                        </div>
-                        <div class="mt-6 flex flex-wrap gap-3">
-                            <button onclick="navigateTo('exam')" class="bg-white text-pink-600 font-bold px-5 py-2.5 rounded-xl text-sm shadow-md shadow-pink-900/10 hover:bg-pink-50 transition flex items-center space-x-2">
-                                <i data-lucide="play-circle" class="w-4 h-4 text-pink-500"></i>
-                                <span>Tiếp tục luyện đề</span>
-                            </button>
-                        </div>
-                    </div>
+                    ${this.renderBannerHtml()}
 
                     <!-- Streak Tracker Widget -->
                     <div class="bg-white rounded-3xl p-6 border border-pink-100 shadow-sm shadow-pink-50 flex flex-col justify-between">
@@ -599,21 +654,15 @@ const dashboardView = {
             lucide.createIcons();
         }
 
-        // Cập nhật giá trị chuỗi ngay lập tức khi render xong
         this.updateStreakRealtime();
 
-        // Đăng ký sự kiện lắng nghe để cập nhật theo thời gian thực mỗi khi có thay đổi dữ liệu
         if (!this._hasBoundStreakListeners) {
             this._hasBoundStreakListeners = true;
-
-            // 1. Đồng bộ khi các tab hoặc module khác ghi vào LocalStorage
             window.addEventListener('storage', (e) => {
                 if (['bong_toeic_user_activity', 'bong_toeic_srs_progress', 'bong_toeic_answered_questions'].includes(e.key)) {
                     this.updateStreakRealtime();
                 }
             });
-
-            // 2. Đồng bộ khi có CustomEvent được dispatch trong cùng một ứng dụng
             window.addEventListener('activityUpdated', () => {
                 this.updateStreakRealtime();
             });
@@ -621,12 +670,10 @@ const dashboardView = {
     }
 };
 
-// Đảm bảo chạy ngay khi trang tải xong lần đầu để thanh chuỗi ở trên luôn chuẩn xác
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
         dashboardView.updateStreakRealtime();
     });
-    // Gọi ngay lập tức nếu DOM đã sẵn sàng
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         dashboardView.updateStreakRealtime();
     }
