@@ -185,14 +185,24 @@ const grammarDrillView = {
 
                         return `
                             <div class="bg-white p-5 sm:p-6 rounded-3xl border transition shadow-sm ${borderStyle}">
-                                <!-- Thanh tiêu đề câu hỏi: Đã loại bỏ tem Trắc nghiệm bị trùng lặp -->
+                                <!-- Thanh tiêu đề câu hỏi: Chỉ giữ 2 nhãn Câu và Thể thức, đã bỏ nhãn Luyện tập/subTopic -->
                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <span class="text-xs font-bold ${isMC ? 'text-pink-600 bg-pink-50 border-pink-200/60' : 'text-rose-600 bg-rose-50 border-rose-200/60'} px-3 py-1 rounded-full border flex items-center gap-1.5">
-                                            <span class="w-2 h-2 rounded-full ${isMC ? 'bg-pink-500' : 'bg-rose-500'}"></span>
-                                            Câu ${idx + 1} •${isMC ? 'Trắc nghiệm' : 'Tự luận'}
+                                        <!-- Nhãn 1: Số thứ tự câu -->
+                                        <span class="text-xs font-bold text-pink-600 bg-pink-50 border border-pink-200/60 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
+                                            <span>Câu ${idx + 1}</span>
                                         </span>
-                                        ${q.subTopicLabel ? `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-pink-100/70 text-pink-800">${q.subTopicLabel}</span>` : ''}
+
+                                        <!-- Nhãn 2: Hình thức câu hỏi (Tím cho Trắc nghiệm, Vàng cho Tự luận) -->
+                                        <span class="text-xs font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 shadow-2xs ${
+                                            isMC 
+                                                ? 'bg-purple-50 text-purple-700 border-purple-200/70' 
+                                                : 'bg-amber-50 text-amber-700 border-amber-200/70'
+                                        }">
+                                            <span class="w-1.5 h-1.5 rounded-full ${isMC ? 'bg-purple-500' : 'bg-amber-500'}"></span>
+                                            <span>${isMC ? 'Trắc nghiệm' : 'Tự luận'}</span>
+                                        </span>
                                     </div>
 
                                     ${state.submitted ? `
@@ -229,10 +239,9 @@ const grammarDrillView = {
                                                     badgeStyles = "bg-rose-500 text-white";
                                                     icon = `<i data-lucide="x" class="w-3.5 h-3.5"></i>`;
                                                 } else {
-                                                    optionStyles = "border-slate-200 opacity-50 text-slate-400 bg-slate-50/40";
+                                                    // Giữ màu nền trắng sáng giống trạng thái ban đầu, không bị mờ xám
+                                                    optionStyles = "border-slate-200 bg-white text-slate-600";
                                                 }
-                                            } else if (isSelected) {
-                                                optionStyles = "border-pink-400 bg-pink-50/80 text-pink-900 font-semibold ring-1 ring-pink-300";
                                             }
 
                                             return `

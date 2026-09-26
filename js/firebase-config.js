@@ -1,3 +1,4 @@
+// js/firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
     from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -63,13 +64,20 @@ window.logoutGoogle = async () => {
     }
 };
 
-// Lưu dữ liệu từ máy lên Cloud Firestore
+// ========================================================
+// ĐỒNG BỘ DỮ LIỆU LÊN CLOUD FIRESTORE (ĐÃ BỔ SUNG NGỮ PHÁP)
+// ========================================================
 window.syncUserDataToCloud = async () => {
     if (!window.currentUser) return;
     try {
         const userId = window.currentUser.uid;
         const payload = {
             folders: JSON.parse(localStorage.getItem('bong_my_folders') || '[]'),
+            // Bổ sung đồng bộ dữ liệu Ngữ pháp (Thư mục cá nhân & Câu hỏi ngữ pháp)
+            grammarFolders: JSON.parse(localStorage.getItem('bong_grammar_my_folders') || '[]'),
+            grammarQuestions: JSON.parse(localStorage.getItem('bong_grammar_questions') || '[]'),
+            grammarAnswers: JSON.parse(localStorage.getItem('bong_grammar_user_answers') || '{}'),
+            
             srsProgress: JSON.parse(localStorage.getItem('bong_toeic_srs_progress') || '{}'),
             answeredQuestions: JSON.parse(localStorage.getItem('bong_toeic_answered_questions') || '{}'),
             userActivity: JSON.parse(localStorage.getItem('bong_toeic_user_activity') || '{}'),
@@ -91,12 +99,21 @@ async function loadUserDataFromCloud(userId) {
         if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.folders) localStorage.setItem('bong_my_folders', JSON.stringify(data.folders));
+            
+            // Bổ sung nạp dữ liệu Ngữ pháp từ Cloud về máy
+            if (data.grammarFolders) localStorage.setItem('bong_grammar_my_folders', JSON.stringify(data.grammarFolders));
+            if (data.grammarQuestions) localStorage.setItem('bong_grammar_questions', JSON.stringify(data.grammarQuestions));
+            if (data.grammarAnswers) localStorage.setItem('bong_grammar_user_answers', JSON.stringify(data.grammarAnswers));
+
             if (data.srsProgress) localStorage.setItem('bong_toeic_srs_progress', JSON.stringify(data.srsProgress));
             if (data.answeredQuestions) localStorage.setItem('bong_toeic_answered_questions', JSON.stringify(data.answeredQuestions));
             if (data.userActivity) localStorage.setItem('bong_toeic_user_activity', JSON.stringify(data.userActivity));
 
-            // Chỉ cập nhật nếu không làm gián đoạn điều hướng khác
-            if (typeof navigateTo === 'function') navigateTo('dashboard');
+            // Làm mới lại giao diện hiện tại nếu đang mở
+            if (typeof navigateTo === 'function') {
+                const currentView = window.appState && appState.currentView ? appState.currentView : 'dashboard';
+                navigateTo(currentView);
+            }
         } else {
             window.syncUserDataToCloud();
         }
@@ -158,7 +175,6 @@ onSnapshot(examsColRef, (snapshot) => {
     window.ExamStore._cache = examsList;
     localStorage.setItem('bong_toeic_exams_cache', JSON.stringify(examsList));
 
-    // CHỈ LÀM MỚI KHI NGƯỜI DÙNG THỰC SỰ ĐANG MỞ TAB "KHO ĐỀ"
     const currentNavTestBuilder = document.getElementById('nav-testBuilder');
     const isAtTestBuilder = currentNavTestBuilder && currentNavTestBuilder.classList.contains('bg-rose-50');
 
