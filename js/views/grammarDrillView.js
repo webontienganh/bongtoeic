@@ -34,10 +34,15 @@ const grammarDrillView = {
         } catch (e) {}
     },
 
+    // Cập nhật: In đậm chữ màu hồng chuẩn theo Hình 3 (không dùng background xám/hồng)
     formatMarkdown(text) {
         if (!text) return "";
-        const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        return escaped.replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-pink-900 bg-pink-100/60 px-1 py-0.5 rounded">$1</strong>');
+        let formatted = String(text)
+            .replace(/\\n/g, '<br/>')
+            .replace(/<br\s*[\/]?>/gi, '<br/>');
+            
+        // In đậm text-pink-600 font-bold như ảnh 3
+        return formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="text-pink-600 font-bold">$1</strong>');
     },
 
     normalizeAnswer(str) {
@@ -109,7 +114,7 @@ const grammarDrillView = {
                                 <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-pink-500"></i>
                                 Đã làm: <strong class="text-pink-600 font-bold">${answeredCount}</strong>/${filtered.length}
                             </span>
-                            <button onclick="grammarDrillView.resetProgress()" class="text-xs text-slate-400 hover:text-rose-500 transition font-medium flex items-center gap-1">
+                            <button onclick="grammarDrillView.resetProgress()" class="text-xs text-slate-400 hover:text-rose-500 transition font-medium flex items-center gap-1 cursor-pointer">
                                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                                 <span>Đặt lại tiến độ</span>
                             </button>
@@ -121,35 +126,35 @@ const grammarDrillView = {
                         <span class="text-xs font-semibold uppercase text-pink-400 mr-1 flex items-center gap-1">
                             <i data-lucide="layers" class="w-3.5 h-3.5"></i> Dạng bài:
                         </span>
-                        <button onclick="grammarDrillView.setTypeFilter('all')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${currentType === 'all' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
+                        <button onclick="grammarDrillView.setTypeFilter('all')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer ${currentType === 'all' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
                             <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
                             <span>Tất cả</span>
                         </button>
-                        <button onclick="grammarDrillView.setTypeFilter('multiple_choice')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${currentType === 'multiple_choice' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
+                        <button onclick="grammarDrillView.setTypeFilter('multiple_choice')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer ${currentType === 'multiple_choice' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
                             <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
                             <span>Trắc nghiệm</span>
                         </button>
-                        <button onclick="grammarDrillView.setTypeFilter('written')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 ${currentType === 'written' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
+                        <button onclick="grammarDrillView.setTypeFilter('written')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer ${currentType === 'written' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
                             <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i>
                             <span>Tự luận</span>
                         </button>
 
                         <div class="hidden sm:block h-4 w-px bg-pink-100 mx-1"></div>
 
-                        <!-- Lọc theo Thư mục (đồng bộ Kho đề) -->
+                        <!-- Lọc theo Thư mục -->
                         <span class="text-xs font-semibold uppercase text-pink-400 mr-1 flex items-center gap-1">
                             <i data-lucide="folder" class="w-3.5 h-3.5"></i> Thư mục:
                         </span>
-                        <select onchange="grammarDrillView.setFolderFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none">
+                        <select onchange="grammarDrillView.setFolderFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer">
                             <option value="all" ${currentFolder === 'all' ? 'selected' : ''}>📁 Tất cả thư mục</option>
                             ${folders.map(f => `<option value="${f.id}" ${currentFolder === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
                         </select>
 
-                        <!-- Lọc theo Bộ đề (đồng bộ Kho đề) -->
+                        <!-- Lọc theo Bộ đề -->
                         <span class="text-xs font-semibold uppercase text-pink-400 mr-1 flex items-center gap-1">
                             <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Bộ đề:
                         </span>
-                        <select onchange="grammarDrillView.setDeckFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none">
+                        <select onchange="grammarDrillView.setDeckFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer">
                             <option value="all" ${currentDeck === 'all' ? 'selected' : ''}>📖 Tất cả bộ đề</option>
                             ${availableDecks.map(d => `<option value="${d.id}" ${currentDeck === d.id ? 'selected' : ''}>${d.folderName ? d.folderName + ' ➔ ' : ''}${d.title}</option>`).join('')}
                         </select>
@@ -157,7 +162,7 @@ const grammarDrillView = {
                 </div>
 
                 <!-- Danh sách câu hỏi -->
-                <div class="space-y-4">
+                <div class="space-y-5">
                     ${filtered.length === 0 ? `
                         <div class="bg-white p-12 text-center rounded-3xl border border-pink-100 text-slate-400 shadow-sm flex flex-col items-center">
                             <div class="w-14 h-14 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center mb-3">
@@ -165,7 +170,7 @@ const grammarDrillView = {
                             </div>
                             <p class="text-base font-semibold text-slate-700">Không tìm thấy câu hỏi phù hợp bộ lọc</p>
                             <p class="text-xs text-slate-400 mt-1">Hãy chuyển bộ lọc hoặc tạo thêm câu hỏi trong mục Quản lý đề.</p>
-                            <button onclick="navigateTo('grammarManager')" class="mt-4 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold rounded-xl transition flex items-center gap-2">
+                            <button onclick="navigateTo('grammarManager')" class="mt-4 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer">
                                 <i data-lucide="folder-plus" class="w-4 h-4"></i>
                                 <span>Đến trang Quản lý & Tạo đề</span>
                             </button>
@@ -180,47 +185,60 @@ const grammarDrillView = {
 
                         return `
                             <div class="bg-white p-5 sm:p-6 rounded-3xl border transition shadow-sm ${borderStyle}">
-                                <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    <span class="text-xs font-bold text-pink-400">Câu ${idx + 1}</span>
-                                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${isMC ? 'bg-pink-50 text-pink-700 border border-pink-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">
-                                        <i data-lucide="${isMC ? 'check-circle' : 'pen-tool'}" class="w-3 h-3"></i>
-                                        <span>${isMC ? 'Trắc nghiệm' : 'Tự luận'}</span>
-                                    </span>
-                                    <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-pink-50 text-slate-600 flex items-center gap-1">
-                                        <i data-lucide="tag" class="w-2.5 h-2.5 text-pink-400"></i>
-                                        <span>${q.topicLabel || q.topic}</span>
-                                    </span>
-                                    ${q.subTopicLabel ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-pink-100/70 text-pink-800">${q.subTopicLabel}</span>` : ''}
+                                <!-- Thanh tiêu đề câu hỏi: Đã loại bỏ tem Trắc nghiệm bị trùng lặp -->
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-xs font-bold ${isMC ? 'text-pink-600 bg-pink-50 border-pink-200/60' : 'text-rose-600 bg-rose-50 border-rose-200/60'} px-3 py-1 rounded-full border flex items-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full ${isMC ? 'bg-pink-500' : 'bg-rose-500'}"></span>
+                                            Câu ${idx + 1} •${isMC ? 'Trắc nghiệm' : 'Tự luận'}
+                                        </span>
+                                        ${q.subTopicLabel ? `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-pink-100/70 text-pink-800">${q.subTopicLabel}</span>` : ''}
+                                    </div>
+
+                                    ${state.submitted ? `
+                                        <span class="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 ${state.isCorrect ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-200' : 'bg-rose-100/80 text-rose-800 border border-rose-200'}">
+                                            <i data-lucide="${state.isCorrect ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                                            <span>${state.isCorrect ? 'Đúng' : 'Sai'}</span>
+                                        </span>
+                                    ` : ''}
                                 </div>
 
-                                <p class="text-slate-900 font-semibold text-sm sm:text-base leading-snug whitespace-pre-line mt-2">
+                                <div class="text-slate-800 font-medium text-sm sm:text-base leading-relaxed mt-2">
                                     ${this.formatMarkdown(q.question)}
-                                </p>
+                                </div>
 
                                 <!-- Body câu hỏi -->
                                 ${isMC ? `
-                                    <div class="mt-4 space-y-2">
+                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                         ${(q.options || []).map(opt => {
-                                            const letter = opt.charAt(0);
+                                            const letter = opt.trim().charAt(0).toUpperCase();
+                                            const optionContent = opt.replace(/^[A-D]\.\s*/i, '');
                                             const isSelected = state.answer === letter;
-                                            let optionStyles = "border-pink-100 hover:border-pink-300 hover:bg-pink-50/40 text-slate-700";
+                                            
+                                            let optionStyles = "border-slate-200 hover:border-pink-300 hover:bg-pink-50/40 text-slate-700 bg-white";
+                                            let badgeStyles = isSelected ? "bg-pink-500 text-white" : "border border-slate-300 bg-slate-50 text-slate-600";
+                                            let icon = `<span class="text-xs font-bold">${letter}</span>`;
 
                                             if (state.submitted) {
                                                 if (letter === q.correctAnswer) {
-                                                    optionStyles = "border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold ring-1 ring-emerald-500";
+                                                    optionStyles = "border-emerald-400 bg-emerald-50/90 text-emerald-900 font-semibold ring-1 ring-emerald-400";
+                                                    badgeStyles = "bg-emerald-500 text-white";
+                                                    icon = `<i data-lucide="check" class="w-3.5 h-3.5"></i>`;
                                                 } else if (isSelected && !state.isCorrect) {
-                                                    optionStyles = "border-rose-400 bg-rose-50 text-rose-800 line-through";
+                                                    optionStyles = "border-rose-300 bg-rose-50 text-rose-800 line-through";
+                                                    badgeStyles = "bg-rose-500 text-white";
+                                                    icon = `<i data-lucide="x" class="w-3.5 h-3.5"></i>`;
                                                 } else {
-                                                    optionStyles = "border-slate-200 opacity-60 text-slate-500";
+                                                    optionStyles = "border-slate-200 opacity-50 text-slate-400 bg-slate-50/40";
                                                 }
                                             } else if (isSelected) {
                                                 optionStyles = "border-pink-400 bg-pink-50/80 text-pink-900 font-semibold ring-1 ring-pink-300";
                                             }
 
                                             return `
-                                                <button onclick="grammarDrillView.selectMC('${q.id}', '${letter}')" ${state.submitted ? 'disabled' : ''} class="w-full text-left p-3 rounded-2xl border text-xs sm:text-sm font-medium transition flex items-center gap-3 ${optionStyles}">
-                                                    <span class="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs ${isSelected ? 'bg-pink-500 text-white' : 'bg-pink-100/60 text-pink-700'}">${letter}</span>
-                                                    <span class="flex-1">${opt.slice(3)}</span>
+                                                <button onclick="grammarDrillView.selectMC('${q.id}', '${letter}')" ${state.submitted ? 'disabled' : ''} class="w-full text-left p-3 rounded-2xl border text-xs sm:text-sm font-medium transition flex items-center gap-3 cursor-pointer ${optionStyles}">
+                                                    <span class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${badgeStyles}">${icon}</span>
+                                                    <span class="flex-1">${this.formatMarkdown(optionContent)}</span>
                                                 </button>
                                             `;
                                         }).join('')}
@@ -228,10 +246,10 @@ const grammarDrillView = {
                                 ` : `
                                     <div class="mt-4 space-y-3">
                                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                                            ${q.promptPrefix ? `<span class="font-semibold text-slate-700 text-sm shrink-0">${q.promptPrefix}</span>` : ''}
+                                            ${q.promptPrefix ? `<span class="font-semibold text-slate-700 text-sm shrink-0">${this.formatMarkdown(q.promptPrefix)}</span>` : ''}
                                             <input type="text" id="drill-written-${q.id}" value="${state.answer || ''}" ${state.submitted ? 'disabled' : ''} placeholder="${q.placeholder || 'Nhập câu trả lời...'}" onkeydown="if(event.key==='Enter') grammarDrillView.submitWritten('${q.id}')" class="flex-1 text-sm px-3.5 py-2.5 rounded-2xl border ${state.submitted ? (state.isCorrect ? 'border-emerald-400 bg-emerald-50/50 text-emerald-900' : 'border-rose-400 bg-rose-50/50 text-rose-900') : 'border-pink-200 focus:border-pink-400'} transition font-medium focus:outline-none">
                                             ${!state.submitted ? `
-                                                <button onclick="grammarDrillView.submitWritten('${q.id}')" class="px-5 py-2.5 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-semibold text-xs transition shrink-0 shadow-sm shadow-pink-200 flex items-center justify-center gap-1.5">
+                                                <button onclick="grammarDrillView.submitWritten('${q.id}')" class="px-5 py-2.5 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-semibold text-xs transition shrink-0 shadow-sm shadow-pink-200 flex items-center justify-center gap-1.5 cursor-pointer">
                                                     <i data-lucide="check" class="w-4 h-4"></i>
                                                     <span>Kiểm tra</span>
                                                 </button>
@@ -245,28 +263,24 @@ const grammarDrillView = {
                                     <div class="mt-4 pt-4 border-t border-slate-100 space-y-2.5 text-xs sm:text-sm">
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center gap-2">
-                                                <span class="inline-flex items-center gap-1 font-bold text-xs ${state.isCorrect ? 'text-emerald-700 bg-emerald-100/60' : 'text-rose-700 bg-rose-100/60'} px-2.5 py-1 rounded-md">
-                                                    <i data-lucide="${state.isCorrect ? 'check' : 'x'}" class="w-3.5 h-3.5"></i>
-                                                    <span>${state.isCorrect ? 'Chính xác' : 'Chưa đúng'}</span>
-                                                </span>
                                                 <span class="text-slate-600 text-xs">
-                                                    ${isMC ? `Đáp án đúng: <strong>${q.correctAnswer}</strong>` : `Đáp án chuẩn: <strong class="text-pink-600 font-mono">${q.cleanTarget || (q.acceptedAnswers && q.acceptedAnswers[0])}</strong>`}
+                                                    ${isMC ? `Đáp án đúng: <strong class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">${q.correctAnswer}</strong>` : `Đáp án chuẩn: <strong class="text-pink-600 font-mono bg-pink-50 px-2 py-0.5 rounded border border-pink-200">${q.cleanTarget || (q.acceptedAnswers && q.acceptedAnswers[0])}</strong>`}
                                                 </span>
                                             </div>
-                                            <button onclick="grammarDrillView.retryQuestion('${q.id}')" class="text-xs text-pink-500 hover:text-pink-700 font-semibold underline flex items-center gap-1">
+                                            <button onclick="grammarDrillView.retryQuestion('${q.id}')" class="text-xs text-pink-500 hover:text-pink-700 font-semibold underline flex items-center gap-1 cursor-pointer">
                                                 <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
                                                 <span>Làm lại câu này</span>
                                             </button>
                                         </div>
                                         ${q.translation ? `
-                                            <div class="bg-amber-50/60 p-2.5 rounded-xl text-slate-800 border border-amber-200/60 text-xs flex items-start gap-2">
+                                            <div class="bg-amber-50/70 p-3 rounded-2xl text-slate-800 border border-amber-200/60 text-xs flex items-start gap-2 leading-relaxed">
                                                 <i data-lucide="languages" class="w-4 h-4 text-amber-700 shrink-0 mt-0.5"></i>
                                                 <div>
-                                                    <span class="font-bold text-amber-800">Dịch nghĩa:</span> ${this.formatMarkdown(q.translation)}
+                                                    <span class="font-bold text-amber-900">Dịch nghĩa:</span> ${this.formatMarkdown(q.translation)}
                                                 </div>
                                             </div>
                                         ` : ''}
-                                        <div class="bg-pink-50/40 p-3.5 rounded-2xl text-slate-700 border border-pink-100 leading-relaxed text-xs sm:text-sm flex items-start gap-2">
+                                        <div class="bg-pink-50/50 p-3.5 rounded-2xl text-slate-700 border border-pink-100 leading-relaxed text-xs sm:text-sm flex items-start gap-2">
                                             <i data-lucide="lightbulb" class="w-4 h-4 text-pink-500 shrink-0 mt-0.5"></i>
                                             <div>
                                                 <span class="font-bold text-slate-900 block mb-1">Giải thích chi tiết:</span>
@@ -326,7 +340,7 @@ const grammarDrillView = {
     },
     setFolderFilter(folderId) {
         appState.grammarFilterFolder = folderId;
-        appState.grammarFilterDeck = 'all'; // Đặt lại bộ đề khi đổi thư mục
+        appState.grammarFilterDeck = 'all';
         this.refresh();
     },
     setDeckFilter(deckId) {

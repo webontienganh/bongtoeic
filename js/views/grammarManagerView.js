@@ -692,8 +692,10 @@ const grammarManagerView = {
                     </div>
                 </div>
 
+                <!-- Khu vực 2 cột có thanh trượt rõ nét và độc lập -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-                    <div class="flex flex-col space-y-1.5 h-full bg-white p-4 rounded-2xl border border-pink-100">
+                    <!-- Cột trái: Nhập dữ liệu bài tập -->
+                    <div class="flex flex-col space-y-1.5 h-full bg-white p-4 rounded-2xl border border-pink-100 overflow-hidden">
                         <div class="flex items-center justify-between shrink-0 mb-1">
                             <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                                 <i data-lucide="code" class="w-4 h-4 text-pink-500"></i>
@@ -701,18 +703,27 @@ const grammarManagerView = {
                             </label>
                             <span class="text-[11px] text-pink-600 font-semibold bg-pink-50 px-2 py-0.5 rounded-lg border border-pink-100">Hỗ trợ [MCQ] & [TL]</span>
                         </div>
-                        <textarea id="modal-edit-deck-raw-text" oninput="grammarManagerView.handleLivePreview(this.value, 'edit-deck-preview-container', 'edit-deck-preview-count')" placeholder="Nhập cấu trúc [MCQ] hoặc [TL]..." class="flex-1 w-full font-mono text-xs p-3.5 rounded-xl border border-pink-200 focus:outline-none leading-relaxed bg-[#fcfdfe] resize-none overflow-y-auto">${rawQuestionsText}</textarea>
+                        <textarea id="modal-edit-deck-raw-text" 
+                            oninput="grammarManagerView.handleLivePreview(this.value, 'edit-deck-preview-container', 'edit-deck-preview-count')" 
+                            placeholder="Nhập cấu trúc [MCQ] hoặc [TL]..." 
+                            class="flex-1 w-full font-mono text-xs p-3.5 rounded-xl border border-pink-200 focus:outline-none focus:ring-1 focus:ring-pink-300 leading-relaxed bg-[#fcfdfe] resize-none overflow-y-auto"
+                            style="scrollbar-width: thin; scrollbar-color: #f472b6 #fdf2f8;"
+                        >${rawQuestionsText}</textarea>
                     </div>
 
-                    <div class="flex flex-col space-y-1.5 h-full bg-white p-4 rounded-2xl border border-pink-100">
+                    <!-- Cột phải: Live Preview -->
+                    <div class="flex flex-col space-y-1.5 h-full bg-white p-4 rounded-2xl border border-pink-100 overflow-hidden">
                         <div class="flex items-center justify-between shrink-0 mb-1">
                             <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                                 <i data-lucide="eye" class="w-4 h-4 text-pink-500"></i>
                                 <span>Xem trước giao diện (Live Preview):</span>
                             </label>
-                            <span id="edit-deck-preview-count" class="text-[11px] text-pink-600 font-bold"></span>
+                            <span id="edit-deck-preview-count" class="text-[11px] text-pink-600 font-bold bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-100"></span>
                         </div>
-                        <div id="edit-deck-preview-container" class="flex-1 w-full p-4 rounded-xl border border-pink-100 bg-slate-50/50 overflow-y-auto space-y-3"></div>
+                        <div id="edit-deck-preview-container" 
+                            class="flex-1 w-full p-4 rounded-xl border border-pink-100 bg-slate-50/50 overflow-y-auto space-y-3"
+                            style="scrollbar-width: thin; scrollbar-color: #f472b6 #fdf2f8;"
+                        ></div>
                     </div>
                 </div>
 
