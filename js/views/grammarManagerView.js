@@ -533,6 +533,12 @@ const grammarManagerView = {
             });
             GrammarStore.saveMyFolders(folders);
         }
+
+        // BỔ SUNG: Gọi đồng bộ ngay lên Cloud để lưu trữ vĩnh viễn
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         closeModal();
         if (typeof showToast === 'function') showToast(`Đã thêm chuyên đề "${name}"`);
         this.refresh();
@@ -586,6 +592,12 @@ const grammarManagerView = {
                 GrammarStore.saveMyFolders(folders);
             }
         }
+
+        // BỔ SUNG: Đồng bộ cập nhật lên Cloud
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         closeModal();
         if (typeof showToast === 'function') showToast(`Đã cập nhật chuyên đề thành "${name}"`);
         this.refresh();
@@ -599,6 +611,12 @@ const grammarManagerView = {
             f.topics = (f.topics || []).filter(t => t.id !== topicId);
             GrammarStore.saveMyFolders(folders);
         }
+
+        // BỔ SUNG: Đồng bộ trạng thái xóa lên Cloud
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         this.refresh();
     },
 
@@ -656,6 +674,12 @@ const grammarManagerView = {
             }
         }
         GrammarStore.saveMyFolders(folders);
+
+        // BỔ SUNG: Đồng bộ ngay lập tức lên Cloud khi tạo bộ đề mới
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         closeModal();
         if (typeof showToast === 'function') showToast(`Đã tạo bộ đề "${title}"`);
         this.refresh();
@@ -804,6 +828,11 @@ const grammarManagerView = {
             GrammarStore.addQuestions(parsedQuestions);
         }
 
+        // BỔ SUNG: Đồng bộ ngay lập tức lên Cloud khi cập nhật câu hỏi trong đề
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         closeModal();
         if (typeof showToast === 'function') {
             showToast(`Đã lưu bộ đề và cập nhật ${parsedQuestions.length} câu hỏi!`);
@@ -821,6 +850,12 @@ const grammarManagerView = {
         });
         GrammarStore.saveMyFolders(folders);
         GrammarStore.deleteQuestionsByDeck(deckId);
+
+        // BỔ SUNG: Đồng bộ trạng thái xóa lên Cloud
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         this.refresh();
     },
 
@@ -1294,6 +1329,12 @@ Giải thích: Cấu trúc câu điều kiện loại 2 giả định điều kh
         }
 
         GrammarStore.addQuestions(newQuestions);
+
+        // BỔ SUNG: Đồng bộ danh sách câu hỏi mới lên Cloud ngay lập tức
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         closeModal();
         if (typeof showToast === 'function') showToast(`Đã tải lên thành công ${newQuestions.length} câu hỏi!`);
         this.refresh();
