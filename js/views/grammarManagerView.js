@@ -474,10 +474,17 @@ const grammarManagerView = {
         this.refresh();
     },
 
+    // Trong hàm deleteFolder hoặc tương tự ở grammarManagerView.js
     deleteFolder(folderId) {
         if (!confirm("Xóa thư mục sẽ xóa tất cả chuyên đề và bộ đề bên trong. Tiếp tục?")) return;
         let folders = GrammarStore.getMyFolders().filter(f => f.id !== folderId);
         GrammarStore.saveMyFolders(folders);
+        
+        // THÊM DÒNG NÀY ĐỂ CẬP NHẬT TRẠNG THÁI XÓA LÊN CLOUD NGAY LẬP TỨC
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+        
         this.refresh();
     },
 
