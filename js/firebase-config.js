@@ -20,7 +20,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 window.currentUser = null;
-let unsubscribeUserDoc = null; // Biến hủy lắng nghe cũ khi đổi tài khoản
+let unsubscribeUserDoc = null;
 
 // Theo dõi trạng thái đăng nhập
 onAuthStateChanged(auth, async (user) => {
@@ -28,7 +28,6 @@ onAuthStateChanged(auth, async (user) => {
     const profileMenu = document.getElementById('user-profile-menu');
     const avatar = document.getElementById('user-avatar');
 
-    // Hủy lắng nghe dữ liệu cũ nếu có
     if (unsubscribeUserDoc) {
         unsubscribeUserDoc();
         unsubscribeUserDoc = null;
@@ -44,38 +43,43 @@ onAuthStateChanged(auth, async (user) => {
             showToast(`Chào mừng ${user.displayName || 'bạn'}! Đang đồng bộ...`);
         }
         
-        // 1. Tải dữ liệu lần đầu khi đăng nhập
         await loadUserDataFromCloud(user.uid);
 
-        // 2. LẮNG NGHE THAY ĐỔI THỜI GIAN THỰC TỪ FIREBASE (Giúp điện thoại tự cập nhật khi laptop thay đổi)
+        // Lắng nghe thay đổi thời gian thực từ Firestore
+        // Lắng nghe thay đổi thời gian thực từ Firestore
         unsubscribeUserDoc = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 let hasChanges = false;
 
-                // Đồng bộ Thư mục Ngữ pháp (Dùng chung khóa bong_my_folders hoặc bong_grammar_my_folders)
-                const cloudFolders = JSON.stringify(data.grammarFolders || data.folders || []);
-                const localFolders = localStorage.getItem('bong_my_folders') || '[]';
-                if (cloudFolders !== localFolders) {
-                    localStorage.setItem('bong_my_folders', cloudFolders);
-                    localStorage.setItem('bong_grammar_my_folders', cloudFolders);
+                const cloudFolders = data.grammarFolders || data.folders || [];
+                const localFoldersStr = localStorage.getItem('bong_grammar_my_folders') || '[]';
+                const cloudFoldersStr = JSON.stringify(cloudFolders);
+
+                if (cloudFoldersStr !== localFoldersStr && cloudFolders.length > 0) {
+                    localStorage.setItem('bong_grammar_my_folders', cloudFoldersStr);
+                    localStorage.setItem('bong_my_folders', cloudFoldersStr);
                     hasChanges = true;
                 }
 
-                // Đồng bộ Câu hỏi Ngữ pháp
-                const cloudQuestions = JSON.stringify(data.grammarQuestions || []);
-                const localQuestions = localStorage.getItem('bong_grammar_questions') || '[]';
-                if (cloudQuestions !== localQuestions) {
-                    localStorage.setItem('bong_grammar_questions', cloudQuestions);
+                // Kiểm tra thêm dữ liệu câu hỏi ngữ pháp
+                const cloudQuestions = data.grammarQuestions || [];
+                const localQuestionsStr = localStorage.getItem('bong_grammar_questions') || '[]';
+                const cloudQuestionsStr = JSON.stringify(cloudQuestions);
+
+                if (cloudQuestionsStr !== localQuestionsStr && cloudQuestions.length > 0) {
+                    localStorage.setItem('bong_grammar_questions', cloudQuestionsStr);
                     hasChanges = true;
                 }
 
-                // Nếu có thay đổi dữ liệu từ thiết bị khác gửi lên, tự động làm mới giao diện đang mở
+                // Tự động làm mới trang nếu có thay đổi và người dùng đang đứng ở mục ngữ pháp
                 if (hasChanges && typeof navigateTo === 'function') {
                     const currentView = window.appState && appState.currentView ? appState.currentView : 'dashboard';
-                    // Chỉ refresh nếu đang ở trang quản lý hoặc luyện ngữ pháp để tránh làm gián đoạn bài thi
                     if (currentView.startsWith('grammar') || currentView === 'dashboard') {
                         navigateTo(currentView);
+                        if (typeof showToast === 'function') {
+                            showToast("Đã đồng bộ dữ liệu ngữ pháp mới từ thiết bị khác!");
+                        }
                     }
                 }
             }
@@ -89,7 +93,6 @@ onAuthStateChanged(auth, async (user) => {
     if (window.lucide && lucide.createIcons) lucide.createIcons();
 });
 
-// Hàm gọi popup đăng nhập Google
 window.loginWithGoogle = async () => {
     try {
         await signInWithPopup(auth, provider);
@@ -99,7 +102,6 @@ window.loginWithGoogle = async () => {
     }
 };
 
-// Đăng xuất
 window.logoutGoogle = async () => {
     if (confirm("Bạn có muốn đăng xuất khỏi tài khoản không?")) {
         await signOut(auth);
@@ -108,20 +110,27 @@ window.logoutGoogle = async () => {
 };
 
 // ========================================================
-// ĐỒNG BỘ DỮ LIỆU LÊN CLOUD FIRESTORE
+// ĐỒNG BỘ LÊN CLOUD (Tự quét tất cả các khóa localStorage liên quan đến ngữ pháp)
 // ========================================================
 window.syncUserDataToCloud = async () => {
     if (!window.currentUser) return;
     try {
         const userId = window.currentUser.uid;
-        // Lấy dữ liệu từ cả 2 nguồn khóa để đảm bảo không bị sót
-        const foldersData = localStorage.getItem('bong_my_folders') || localStorage.getItem('bong_grammar_my_folders') || '[]';
-        const questionsData = localStorage.getItem('bong_grammar_questions') || '[]';
         
+        // Quét tìm dữ liệu thư mục ngữ pháp từ các khóa phổ biến
+        const localFolders = localStorage.getItem('bong_grammar_my_folders') 
+            || localStorage.getItem('bong_my_folders') 
+            || localStorage.getItem('grammar_folders') 
+            || '[]';
+
+        const localQuestions = localStorage.getItem('bong_grammar_questions') 
+            || localStorage.getItem('grammar_questions') 
+            || '[]';
+
         const payload = {
-            folders: JSON.parse(foldersData),
-            grammarFolders: JSON.parse(foldersData),
-            grammarQuestions: JSON.parse(questionsData),
+            folders: JSON.parse(localFolders),
+            grammarFolders: JSON.parse(localFolders),
+            grammarQuestions: JSON.parse(localQuestions),
             grammarAnswers: JSON.parse(localStorage.getItem('bong_grammar_user_answers') || '{}'),
             
             srsProgress: JSON.parse(localStorage.getItem('bong_toeic_srs_progress') || '{}'),
@@ -129,14 +138,15 @@ window.syncUserDataToCloud = async () => {
             userActivity: JSON.parse(localStorage.getItem('bong_toeic_user_activity') || '{}'),
             updatedAt: new Date().toISOString()
         };
+
         await setDoc(doc(db, "users", userId), payload, { merge: true });
-        console.log("Đã đồng bộ lên Cloud thành công!");
+        console.log("Đã đồng bộ dữ liệu ngữ pháp lên Cloud thành công!");
     } catch (e) {
         console.error("Lỗi lưu lên Cloud:", e);
     }
 };
 
-// Nạp dữ liệu từ Cloud về máy khi đăng nhập
+// Nạp dữ liệu từ Cloud về máy
 async function loadUserDataFromCloud(userId) {
     try {
         const docRef = doc(db, "users", userId);
@@ -146,12 +156,19 @@ async function loadUserDataFromCloud(userId) {
             const data = docSnap.data();
             const cloudFolders = data.grammarFolders || data.folders;
             
-            if (cloudFolders) {
-                localStorage.setItem('bong_my_folders', JSON.stringify(cloudFolders));
-                localStorage.setItem('bong_grammar_my_folders', JSON.stringify(cloudFolders));
+            // Nếu trên Cloud có dữ liệu hợp lệ và khác rỗng, nạp về máy
+            if (cloudFolders && Array.isArray(cloudFolders) && cloudFolders.length > 0) {
+                const cloudFoldersStr = JSON.stringify(cloudFolders);
+                localStorage.setItem('bong_grammar_my_folders', cloudFoldersStr);
+                localStorage.setItem('bong_my_folders', cloudFoldersStr);
             }
-            if (data.grammarQuestions) localStorage.setItem('bong_grammar_questions', JSON.stringify(data.grammarQuestions));
-            if (data.grammarAnswers) localStorage.setItem('bong_grammar_user_answers', JSON.stringify(data.grammarAnswers));
+
+            if (data.grammarQuestions) {
+                localStorage.setItem('bong_grammar_questions', JSON.stringify(data.grammarQuestions));
+            }
+            if (data.grammarAnswers) {
+                localStorage.setItem('bong_grammar_user_answers', JSON.stringify(data.grammarAnswers));
+            }
 
             if (data.srsProgress) localStorage.setItem('bong_toeic_srs_progress', JSON.stringify(data.srsProgress));
             if (data.answeredQuestions) localStorage.setItem('bong_toeic_answered_questions', JSON.stringify(data.answeredQuestions));
@@ -167,10 +184,10 @@ async function loadUserDataFromCloud(userId) {
     } catch (e) {
         console.error("Lỗi tải dữ liệu Cloud:", e);
     }
-}
+};
 
 // ========================================================
-// QUẢN LÝ KHO ĐỀ DÙNG CHUNG TRÊN CLOUD FIRESTORE
+// QUẢN LÝ KHO ĐỀ DÙNG CHUNG TRÊN CLOUD FIRESTORE (TOEIC)
 // ========================================================
 window.ExamStore = {
     _cache: [],
@@ -193,7 +210,6 @@ window.ExamStore = {
 
         try {
             await setDoc(doc(db, "exams", examData.examId), examData, { merge: true });
-            console.log("Đã lưu đề thi lên Firestore:", examData.examId);
         } catch (e) {
             console.error("Lỗi lưu đề thi lên Firestore:", e);
         }
@@ -205,14 +221,12 @@ window.ExamStore = {
 
         try {
             await deleteDoc(doc(db, "exams", examId));
-            console.log("Đã xóa đề thi khỏi Firestore:", examId);
         } catch (e) {
             console.error("Lỗi xóa đề thi trên Firestore:", e);
         }
     }
 };
 
-// Lắng nghe dữ liệu đề thi thời gian thực
 const examsColRef = collection(db, "exams");
 onSnapshot(examsColRef, (snapshot) => {
     const examsList = [];

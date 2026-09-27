@@ -403,6 +403,12 @@ const grammarManagerView = {
             topics: []
         });
         GrammarStore.saveMyFolders(folders);
+        
+        // THÊM DÒNG NÀY ĐỂ ĐỒNG BỘ NGAY LẬP TỨC LÊN CLOUD
+        if (window.syncUserDataToCloud) {
+            window.syncUserDataToCloud();
+        }
+
         closeModal();
         if (typeof showToast === 'function') showToast(`Đã tạo thư mục "${name}"`);
         this.refresh();
