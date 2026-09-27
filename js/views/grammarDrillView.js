@@ -6,32 +6,38 @@ const grammarDrillView = {
     initAudio() {
         if (this.audioReady) return;
         try {
-            if (window.Tone) {
+            if (window.Tone && typeof Tone.PolySynth === 'function') {
                 this.synth = new Tone.PolySynth(Tone.Synth, {
                     oscillator: { type: "triangle" },
                     envelope: { attack: 0.005, decay: 0.1, sustain: 0.1, release: 0.2 }
                 }).toDestination();
-                this.synth.volume.value = -12;
+                if (this.synth && this.synth.volume) {
+                    this.synth.volume.value = -12;
+                }
                 this.audioReady = true;
             }
         } catch (e) {
-            console.warn("Audio Tone.js init deferred.");
+            console.warn("Audio Tone.js init deferred.", e);
         }
     },
 
     playSound(isCorrect) {
-        this.initAudio();
-        if (!this.synth || !window.Tone) return;
         try {
-            if (Tone.context.state !== 'running') {
-                Tone.start();
+            this.initAudio();
+            if (!this.synth || !window.Tone) return;
+            
+            if (Tone.context && Tone.context.state !== 'running') {
+                Tone.start().catch(() => {});
             }
+            
             if (isCorrect) {
                 this.synth.triggerAttackRelease(["E5", "G#5"], "16n");
             } else {
                 this.synth.triggerAttackRelease(["D3", "C#3"], "16n");
             }
-        } catch (e) {}
+        } catch (e) {
+            // Bỏ qua lỗi âm thanh nếu trình duyệt chặn
+        }
     },
 
     // Cập nhật: In đậm chữ màu hồng chuẩn theo Hình 3 (không dùng background xám/hồng)
@@ -61,7 +67,7 @@ const grammarDrillView = {
         const folders = window.GrammarStore 
             ? (typeof GrammarStore.getFolders === 'function' 
                 ? GrammarStore.getFolders() 
-                : [...GrammarStore.getCommunityFolders(), ...GrammarStore.getMyFolders()])
+                : [...(GrammarStore.getCommunityFolders?.() || []), ...(GrammarStore.getMyFolders?.() || [])])
             : [];
         const userAnswers = window.GrammarStore ? GrammarStore.getUserAnswers() : {};
 
@@ -185,16 +191,12 @@ const grammarDrillView = {
 
                         return `
                             <div class="bg-white p-5 sm:p-6 rounded-3xl border transition shadow-sm ${borderStyle}">
-                                <!-- Thanh tiêu đề câu hỏi: Chỉ giữ 2 nhãn Câu và Thể thức, đã bỏ nhãn Luyện tập/subTopic -->
                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <!-- Nhãn 1: Số thứ tự câu -->
                                         <span class="text-xs font-bold text-pink-600 bg-pink-50 border border-pink-200/60 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
                                             <span class="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
                                             <span>Câu ${idx + 1}</span>
                                         </span>
-
-                                        <!-- Nhãn 2: Hình thức câu hỏi (Tím cho Trắc nghiệm, Vàng cho Tự luận) -->
                                         <span class="text-xs font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 shadow-2xs ${
                                             isMC 
                                                 ? 'bg-purple-50 text-purple-700 border-purple-200/70' 
@@ -217,7 +219,6 @@ const grammarDrillView = {
                                     ${this.formatMarkdown(q.question)}
                                 </div>
 
-                                <!-- Body câu hỏi -->
                                 ${isMC ? `
                                     <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                         ${(q.options || []).map(opt => {
@@ -239,7 +240,6 @@ const grammarDrillView = {
                                                     badgeStyles = "bg-rose-500 text-white";
                                                     icon = `<i data-lucide="x" class="w-3.5 h-3.5"></i>`;
                                                 } else {
-                                                    // Giữ màu nền trắng sáng giống trạng thái ban đầu, không bị mờ xám
                                                     optionStyles = "border-slate-200 bg-white text-slate-600";
                                                 }
                                             }
@@ -267,7 +267,6 @@ const grammarDrillView = {
                                     </div>
                                 `}
 
-                                <!-- Giải thích chi tiết khi nộp -->
                                 ${state.submitted ? `
                                     <div class="mt-4 pt-4 border-t border-slate-100 space-y-2.5 text-xs sm:text-sm">
                                         <div class="flex items-center justify-between">
