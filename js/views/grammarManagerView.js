@@ -52,7 +52,10 @@ const grammarManagerView = {
                 return `<div class="p-8 text-center text-slate-400">Chuyên đề không tồn tại. <button onclick="grammarManagerView.backToTopics()" class="text-pink-600 underline">Quay lại</button></div>`;
             }
 
-            const decks = topic.decks || [];
+            // MỚI: Sắp xếp theo thứ tự A-Z (hỗ trợ số tự nhiên 1, 2, 3...)
+            const decks = [...(topic.decks || [])].sort((a, b) => 
+                (a.title || '').localeCompare(b.title || '', 'vi', { numeric: true, sensitivity: 'base' })
+            );
 
             return `
                 <div class="space-y-6 max-w-6xl mx-auto pb-16">
@@ -1063,7 +1066,9 @@ const grammarManagerView = {
         for (const f of folders) {
             const topic = (f.topics || []).find(t => t.id === topicId);
             if (topic) {
-                decks = topic.decks || [];
+                decks = [...(topic.decks || [])].sort((a, b) => 
+                    (a.title || '').localeCompare(b.title || '', 'vi', { numeric: true, sensitivity: 'base' })
+                );
                 break;
             }
         }
