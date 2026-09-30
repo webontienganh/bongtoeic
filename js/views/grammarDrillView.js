@@ -190,60 +190,68 @@ const grammarDrillView = {
                         </div>
                     </div>
 
-                    <!-- Thanh điều hướng dạng bài và bộ lọc cấu trúc kho đề -->
-                    <div class="pt-3 border-t border-pink-50 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                        <!-- Nhóm Dạng bài -->
+                    <!-- Thanh điều hướng dạng bài và bộ lọc cấu trúc kho đề (Đã chuẩn hóa cân đối Mobile & Laptop) -->
+                    <div class="pt-4 border-t border-pink-50 space-y-3.5">
+                        <!-- Hàng 1: Dạng bài -->
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-xs font-semibold uppercase text-pink-400 mr-1 flex items-center gap-1">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pink-500 mr-1 flex items-center gap-1.5 shrink-0">
                                 <i data-lucide="layers" class="w-3.5 h-3.5"></i> Dạng bài:
                             </span>
-                            <button onclick="grammarDrillView.setTypeFilter('all')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer ${currentType === 'all' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
-                                <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
-                                <span>Tất cả</span>
-                            </button>
-                            <button onclick="grammarDrillView.setTypeFilter('multiple_choice')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer ${currentType === 'multiple_choice' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
-                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-                                <span>Trắc nghiệm</span>
-                            </button>
-                            <button onclick="grammarDrillView.setTypeFilter('written')" class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer ${currentType === 'written' ? 'bg-pink-500 text-white shadow-xs' : 'bg-pink-50 text-pink-800 hover:bg-pink-100'} transition">
-                                <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i>
-                                <span>Tự luận</span>
-                            </button>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="grammarDrillView.setTypeFilter('all')" class="text-xs font-semibold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer ${currentType === 'all' ? 'bg-pink-500 text-white shadow-xs ring-2 ring-pink-300' : 'bg-pink-50/80 text-pink-700 hover:bg-pink-100'}">
+                                    <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                                    <span>Tất cả</span>
+                                </button>
+                                <button onclick="grammarDrillView.setTypeFilter('multiple_choice')" class="text-xs font-semibold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer ${currentType === 'multiple_choice' ? 'bg-pink-500 text-white shadow-xs ring-2 ring-pink-300' : 'bg-pink-50/80 text-pink-700 hover:bg-pink-100'}">
+                                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                                    <span>Trắc nghiệm</span>
+                                </button>
+                                <button onclick="grammarDrillView.setTypeFilter('written')" class="text-xs font-semibold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer ${currentType === 'written' ? 'bg-pink-500 text-white shadow-xs ring-2 ring-pink-300' : 'bg-pink-50/80 text-pink-700 hover:bg-pink-100'}">
+                                    <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i>
+                                    <span>Tự luận</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Nhóm Lọc 3 Cấp: Thư mục -> Chuyên đề -> Bộ đề -->
-                        <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- Hàng 2: Bộ lọc 3 cấp Thư mục -> Chuyên đề -> Bộ đề (Grid 3 cột cân đối tuyệt đối) -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                             <!-- 1. Lọc theo Thư mục -->
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-xs font-semibold uppercase text-pink-400 flex items-center gap-1">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 bg-pink-50/40 p-1.5 px-2.5 rounded-2xl border border-pink-100/80">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-pink-500 flex items-center gap-1 shrink-0">
                                     <i data-lucide="folder" class="w-3.5 h-3.5"></i> Thư mục:
                                 </span>
-                                <select onchange="grammarDrillView.setFolderFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer">
-                                    <option value="all" ${currentFolder === 'all' ? 'selected' : ''}>📁 Tất cả thư mục</option>
-                                    ${folders.map(f => `<option value="${f.id}" ${currentFolder === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-                                </select>
+                                <div class="relative flex-1 min-w-0">
+                                    <select onchange="grammarDrillView.setFolderFilter(this.value)" class="w-full text-xs font-medium bg-white border border-pink-200/80 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 cursor-pointer truncate">
+                                        <option value="all" ${currentFolder === 'all' ? 'selected' : ''}>📁 Tất cả thư mục</option>
+                                        ${folders.map(f => `<option value="${f.id}" ${currentFolder === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
 
                             <!-- 2. Lọc theo Chuyên đề -->
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-xs font-semibold uppercase text-pink-400 flex items-center gap-1">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 bg-pink-50/40 p-1.5 px-2.5 rounded-2xl border border-pink-100/80">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-pink-500 flex items-center gap-1 shrink-0">
                                     <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Chuyên đề:
                                 </span>
-                                <select onchange="grammarDrillView.setTopicFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer max-w-[170px]">
-                                    <option value="all" ${currentTopic === 'all' ? 'selected' : ''}>🔖 Tất cả chuyên đề</option>
-                                    ${availableTopics.map(t => `<option value="${t.id}" ${currentTopic === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
-                                </select>
+                                <div class="relative flex-1 min-w-0">
+                                    <select onchange="grammarDrillView.setTopicFilter(this.value)" class="w-full text-xs font-medium bg-white border border-pink-200/80 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 cursor-pointer truncate">
+                                        <option value="all" ${currentTopic === 'all' ? 'selected' : ''}>🔖 Tất cả chuyên đề</option>
+                                        ${availableTopics.map(t => `<option value="${t.id}" ${currentTopic === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
 
                             <!-- 3. Lọc theo Bộ đề -->
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-xs font-semibold uppercase text-pink-400 flex items-center gap-1">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 bg-pink-50/40 p-1.5 px-2.5 rounded-2xl border border-pink-100/80">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-pink-500 flex items-center gap-1 shrink-0">
                                     <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Bộ đề:
                                 </span>
-                                <select onchange="grammarDrillView.setDeckFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer max-w-[190px] truncate">
-                                    <option value="all" ${currentDeck === 'all' ? 'selected' : ''}>📖 Tất cả bộ đề</option>
-                                    ${availableDecks.map(d => `<option value="${d.id}" ${currentDeck === d.id ? 'selected' : ''}>${d.title}</option>`).join('')}
-                                </select>
+                                <div class="relative flex-1 min-w-0">
+                                    <select onchange="grammarDrillView.setDeckFilter(this.value)" class="w-full text-xs font-medium bg-white border border-pink-200/80 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 cursor-pointer truncate">
+                                        <option value="all" ${currentDeck === 'all' ? 'selected' : ''}>📖 Tất cả bộ đề</option>
+                                        ${availableDecks.map(d => `<option value="${d.id}" ${currentDeck === d.id ? 'selected' : ''}>${d.title}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
