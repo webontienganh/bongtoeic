@@ -407,7 +407,6 @@ const grammarManagerView = {
         });
         GrammarStore.saveMyFolders(folders);
         
-        // THÊM DÒNG NÀY ĐỂ ĐỒNG BỘ NGAY LẬP TỨC LÊN CLOUD
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -477,13 +476,11 @@ const grammarManagerView = {
         this.refresh();
     },
 
-    // Trong hàm deleteFolder hoặc tương tự ở grammarManagerView.js
     deleteFolder(folderId) {
         if (!confirm("Xóa thư mục sẽ xóa tất cả chuyên đề và bộ đề bên trong. Tiếp tục?")) return;
         let folders = GrammarStore.getMyFolders().filter(f => f.id !== folderId);
         GrammarStore.saveMyFolders(folders);
         
-        // THÊM DÒNG NÀY ĐỂ CẬP NHẬT TRẠNG THÁI XÓA LÊN CLOUD NGAY LẬP TỨC
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -537,7 +534,6 @@ const grammarManagerView = {
             GrammarStore.saveMyFolders(folders);
         }
 
-        // BỔ SUNG: Gọi đồng bộ ngay lên Cloud để lưu trữ vĩnh viễn
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -596,7 +592,6 @@ const grammarManagerView = {
             }
         }
 
-        // BỔ SUNG: Đồng bộ cập nhật lên Cloud
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -615,7 +610,6 @@ const grammarManagerView = {
             GrammarStore.saveMyFolders(folders);
         }
 
-        // BỔ SUNG: Đồng bộ trạng thái xóa lên Cloud
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -678,7 +672,6 @@ const grammarManagerView = {
         }
         GrammarStore.saveMyFolders(folders);
 
-        // BỔ SUNG: Đồng bộ ngay lập tức lên Cloud khi tạo bộ đề mới
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -784,21 +777,28 @@ const grammarManagerView = {
     convertQuestionsToRawText(questions) {
         if (!questions || questions.length === 0) return "";
         return questions.map(q => {
+            let str = "";
             if (q.type === 'multiple_choice') {
                 const optStr = (q.options || []).join('\n');
-                let str = `[MCQ]\nCâu hỏi: ${q.question || ''}\n${optStr}\nĐáp án: ${q.correctAnswer || ''}`;
-                if (q.translation) str += `\nDịch: ${q.translation}`;
-                if (q.explanation) str += `\nGiải thích: ${q.explanation}`;
-                return str;
+                str = `[MCQ]\nCâu hỏi: ${q.question || ''}\n${optStr}\nĐáp án: ${q.correctAnswer || ''}`;
             } else {
                 const ansStr = (q.acceptedAnswers || []).join(', ');
-                let str = `[TL]\nCâu hỏi: ${q.question || ''}`;
+                str = `[TL]\nCâu hỏi: ${q.question || ''}`;
                 if (q.promptPrefix) str += `\nGợi ý: ${q.promptPrefix}`;
                 str += `\nĐáp án: ${ansStr}`;
-                if (q.translation) str += `\nDịch: ${q.translation}`;
-                if (q.explanation) str += `\nGiải thích: ${q.explanation}`;
-                return str;
             }
+
+            if (q.translation) str += `\nDịch: ${q.translation}`;
+            if (q.explanation) str += `\nGiải thích: ${q.explanation}`;
+            
+            // Bổ sung đầy đủ 2 trường dữ liệu
+            if (q.optionsMeanings && q.optionsMeanings.length > 0) {
+                str += `\nNghĩa của các đáp án:\n` + q.optionsMeanings.map(m => `<br>${m}`).join('\n');
+            }
+            if (q.reason) {
+                str += `\nLý do:\n` + q.reason.split('<br>').map(r => r.trim()).filter(Boolean).map(r => `<br>${r}`).join('\n');
+            }
+            return str;
         }).join('\n\n');
     },
 
@@ -831,7 +831,6 @@ const grammarManagerView = {
             GrammarStore.addQuestions(parsedQuestions);
         }
 
-        // BỔ SUNG: Đồng bộ ngay lập tức lên Cloud khi cập nhật câu hỏi trong đề
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -854,7 +853,6 @@ const grammarManagerView = {
         GrammarStore.saveMyFolders(folders);
         GrammarStore.deleteQuestionsByDeck(deckId);
 
-        // BỔ SUNG: Đồng bộ trạng thái xóa lên Cloud
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }
@@ -935,7 +933,7 @@ const grammarManagerView = {
                         </div>
                     </div>
 
-                    <!-- 3. Bảng quy tắc dạng Collapsible (Gồm quy tắc Xuống dòng mới) -->
+                    <!-- 3. Bảng quy tắc dạng Collapsible -->
                     <div class="px-6 py-2 bg-amber-50/50 border-b border-amber-200/50 shrink-0">
                         <details class="group text-xs text-slate-700" open>
                             <summary class="flex items-center justify-between cursor-pointer select-none font-semibold text-amber-900 py-0.5">
@@ -978,7 +976,7 @@ const grammarManagerView = {
                         </details>
                     </div>
 
-                    <!-- 4. KHU VỰC CHÍNH (2 CỘT) - ĐÃ CỐ ĐỊNH THANH CUỘN ĐỘC LẬP -->
+                    <!-- 4. KHU VỰC CHÍNH (2 CỘT) -->
                     <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 sm:p-6 bg-slate-50/50">
                         
                         <!-- Cột Trái: Trình soạn thảo văn bản -->
@@ -1081,18 +1079,12 @@ const grammarManagerView = {
         }
     },
 
-    // -------------------------------------------------------------------------
-    // HỖ TRỢ RENDER IN ĐẬM **TEXT** & XUỐNG DÒNG <BR> / \N
-    // -------------------------------------------------------------------------
     formatBoldText(text) {
         if (!text) return '';
         let formatted = text.replace(/\\n/g, '<br/>').replace(/<br\s*[\/]?>/gi, '<br/>');
         return formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="text-pink-600 font-bold">$1</strong>');
     },
 
-    // -------------------------------------------------------------------------
-    // BỘ PHÂN TÍCH PARSER
-    // -------------------------------------------------------------------------
     parseRawQuestions(rawText, deckId = "temp") {
         if (!rawText || !rawText.trim()) return [];
 
@@ -1128,6 +1120,8 @@ const grammarManagerView = {
             let promptPrefix = "";
             let translation = "";
             let explanationLines = [];
+            let optionsMeanings = [];
+            let reasonLines = [];
             let currentField = "question";
 
             for (let line of lines) {
@@ -1138,7 +1132,7 @@ const grammarManagerView = {
                     currentField = "question";
                     const val = trimmed.replace(/^câu\s*hỏi\s*:\s*/i, '');
                     if (val) questionLines.push(val);
-                } else if (/^[A-D]\.\s+/i.test(trimmed)) {
+                } else if (/^[A-D]\.\s+/i.test(trimmed) && currentField !== "meanings") {
                     currentField = "options";
                     options.push(trimmed);
                 } else if (/^gợi\s*ý\s*:/i.test(trimmed)) {
@@ -1160,6 +1154,14 @@ const grammarManagerView = {
                     currentField = "explanation";
                     const expVal = trimmed.replace(/^giải\s*thích\s*:\s*/i, '').trim();
                     if (expVal) explanationLines.push(expVal);
+                } else if (/^nghĩa của các đáp án\s*:/i.test(trimmed)) {
+                    currentField = "meanings";
+                    const val = trimmed.replace(/^nghĩa của các đáp án\s*:\s*/i, '').trim();
+                    if (val) optionsMeanings.push(val.replace(/^<br\s*\/?>/i, '').trim());
+                } else if (/^lý\s*do\s*:/i.test(trimmed)) {
+                    currentField = "reason";
+                    const val = trimmed.replace(/^lý\s*do\s*:\s*/i, '').trim();
+                    if (val) reasonLines.push(val.replace(/^<br\s*\/?>/i, '').trim());
                 } else {
                     if (currentField === "question") {
                         questionLines.push(trimmed);
@@ -1167,12 +1169,19 @@ const grammarManagerView = {
                         explanationLines.push(trimmed);
                     } else if (currentField === "translation") {
                         translation += (translation ? ' ' : '') + trimmed;
+                    } else if (currentField === "meanings") {
+                        const cleanLine = trimmed.replace(/^<br\s*\/?>/i, '').trim();
+                        if (cleanLine) optionsMeanings.push(cleanLine);
+                    } else if (currentField === "reason") {
+                        const cleanLine = trimmed.replace(/^<br\s*\/?>/i, '').trim();
+                        if (cleanLine) reasonLines.push(cleanLine);
                     }
                 }
             }
 
             const questionText = questionLines.join('\n').trim();
             const explanation = explanationLines.join('\n').trim();
+            const reason = reasonLines.join('<br>').trim();
 
             if (!questionText) continue;
 
@@ -1189,7 +1198,9 @@ const grammarManagerView = {
                     options: options,
                     correctAnswer: correctAnswer,
                     translation: translation,
-                    explanation: explanation || "Chưa có giải thích chi tiết."
+                    explanation: explanation,
+                    optionsMeanings: optionsMeanings,
+                    reason: reason
                 });
             } else if (current.type === 'TL' && acceptedAnswers.length > 0) {
                 result.push({
@@ -1206,16 +1217,55 @@ const grammarManagerView = {
                     acceptedAnswers: acceptedAnswers,
                     cleanTarget: acceptedAnswers[0],
                     translation: translation,
-                    explanation: explanation || "Chưa có giải thích chi tiết."
+                    explanation: explanation,
+                    optionsMeanings: optionsMeanings,
+                    reason: reason
                 });
             }
         }
 
         return result;
     },
+    // Tách chuỗi giải thích thô thành 3 phần: giải thích chung, nghĩa các đáp án và lý do
+    splitExplanationParts(rawExplanation) {
+        if (!rawExplanation) {
+            return { general: '', optionsMeanings: [], reason: '' };
+        }
 
+        let text = rawExplanation;
+        let reason = '';
+        let optionsMeanings = [];
+        let general = '';
+
+        // 1. Tách phần "Lý do:" (nếu có)
+        const reasonMatch = text.match(/(?:^|\n|\.\s+|;\s*)Lý do\s*:\s*([\s\S]*)$/i);
+        if (reasonMatch) {
+            reason = reasonMatch[1].trim();
+            text = text.substring(0, reasonMatch.index).trim();
+        }
+
+        // 2. Tách phần "Nghĩa của các đáp án:" (nếu có)
+        const optMatch = text.match(/(?:^|\n)Nghĩa của các đáp án\s*:\s*([\s\S]*)$/i);
+        if (optMatch) {
+            const optBlock = optMatch[1].trim();
+            general = text.substring(0, optMatch.index).trim();
+
+            // Tách các dòng hoặc các mục A., B., C., D.
+            const itemRegex = /([A-D]\.\s*[^A-D\n]+)/gi;
+            const matches = optBlock.match(itemRegex);
+            if (matches && matches.length > 0) {
+                optionsMeanings = matches.map(m => m.trim().replace(/\.$/, ''));
+            } else {
+                optionsMeanings = optBlock.split('\n').map(s => s.trim()).filter(Boolean);
+            }
+        } else {
+            general = text;
+        }
+
+        return { general, optionsMeanings, reason };
+    },
     // -------------------------------------------------------------------------
-    // RENDER XEM TRƯỚC CÂU HỎI TRỰC TIẾP (LIVE PREVIEW)
+    // RENDER XEM TRƯỚC CÂU HỎI TRỰC TIẾP (LIVE PREVIEW) - ĐÃ CẬP NHẬT 4 KHUNG 4 MÀU
     // -------------------------------------------------------------------------
     handleLivePreview(text, containerId, countElementId = null) {
         const container = document.getElementById(containerId);
@@ -1275,21 +1325,59 @@ const grammarManagerView = {
                     </div>
                 `}
 
-                ${(q.translation || q.explanation) ? `
-                    <div class="pt-2 border-t border-slate-100 space-y-1 text-[11px]">
-                        ${q.translation ? `<div class="text-slate-600"><strong class="text-slate-700">Dịch nghĩa:</strong> ${this.formatBoldText(q.translation)}</div>` : ''}
-                        ${q.explanation ? `<div class="text-pink-700 bg-pink-50/60 p-2 rounded-xl border border-pink-100/60"><strong class="text-pink-600">Giải thích:</strong> ${this.formatBoldText(q.explanation)}</div>` : ''}
+                <!-- 4 KHU VỰC PHẢN HỒI VỚI 4 MÀU SẮC ĐẶC TRƯNG TÁCH BIỆT (LẤY TỪ DỮ LIỆU ĐẦU VÀO) -->
+                ${(() => {
+                    // Ưu tiên dữ liệu parse trực tiếp từ input, nếu trống mới fallback qua tách từ chuỗi explanation cũ
+                    const parsed = this.splitExplanationParts(q.explanation);
+                    const generalExplanation = q.explanation || parsed.general;
+                    const finalMeanings = (q.optionsMeanings && q.optionsMeanings.length > 0) ? q.optionsMeanings : parsed.optionsMeanings;
+                    const finalReason = q.reason || parsed.reason;
+                    const defaultReason = `Chọn <strong>${q.type === 'multiple_choice' ? (q.correctAnswer || '...') : ((q.acceptedAnswers || [])[0] || '...')}</strong> vì đáp án này phù hợp hoàn toàn với cấu trúc ngữ pháp và nghĩa của ngữ cảnh câu hỏi.`;
+
+                    return `
+                    <div class="space-y-2 pt-2 border-t border-slate-100 text-[11px]">
+                        
+                        <!-- 1. Dịch nghĩa (Màu Xanh lam / Sky) -->
+                        ${q.translation ? `
+                            <div class="text-sky-900 bg-sky-50/70 p-2.5 rounded-xl border border-sky-200/60 leading-relaxed">
+                                <strong class="text-sky-700 font-bold block mb-0.5">Dịch nghĩa:</strong> 
+                                <span>${this.formatBoldText(q.translation)}</span>
+                            </div>
+                        ` : ''}
+
+                        <!-- 2. Giải thích (Màu Tím / Purple) -->
+                        ${generalExplanation ? `
+                            <div class="text-purple-900 bg-purple-50/70 p-2.5 rounded-xl border border-purple-200/60 leading-relaxed">
+                                <strong class="text-purple-700 font-bold block mb-0.5">Giải thích:</strong> 
+                                <span>${this.formatBoldText(generalExplanation)}</span>
+                            </div>
+                        ` : ''}
+
+                        <!-- 3. Nghĩa của các đáp án (Màu Xanh lá / Emerald) -->
+                        ${finalMeanings && finalMeanings.length > 0 ? `
+                            <div class="text-emerald-900 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/60 leading-relaxed space-y-1">
+                                <strong class="text-emerald-700 font-bold block mb-0.5">Nghĩa của các đáp án:</strong>
+                                <div class="grid grid-cols-1 gap-1">
+                                    ${finalMeanings.map(opt => `<div class="text-emerald-800">${this.formatBoldText(opt)}</div>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- 4. Lý do (Màu Hổ phách / Amber) -->
+                        <div class="text-amber-900 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60 leading-relaxed">
+                            <strong class="text-amber-700 font-bold block mb-0.5">Lý do:</strong>
+                            <span>${this.formatBoldText(finalReason || defaultReason)}</span>
+                        </div>
+
                     </div>
-                ` : ''}
+                    `;
+                })()}
             </div>
         `).join('');
 
         if (window.lucide) lucide.createIcons();
     },
 
-    // -------------------------------------------------------------------------
-    // NẠP DỮ LIỆU MẪU CÓ MINH HỌA XUỐNG DÒNG BẰNG <BR> VÀ \N
-    // -------------------------------------------------------------------------
     loadSampleData() {
         const sample = `[MCQ]
 Câu hỏi: Read the following dialogue and fill in the blank:<br>A: "Have you submitted your report yet?"<br>B: "No, I ______ it for **five hours** before the electricity went out."
@@ -1335,7 +1423,6 @@ Giải thích: Cấu trúc câu điều kiện loại 2 giả định điều kh
 
         GrammarStore.addQuestions(newQuestions);
 
-        // BỔ SUNG: Đồng bộ danh sách câu hỏi mới lên Cloud ngay lập tức
         if (window.syncUserDataToCloud) {
             window.syncUserDataToCloud();
         }

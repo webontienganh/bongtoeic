@@ -60,6 +60,50 @@ const grammarDrillView = {
         if (!cleanUser) return false;
         return (acceptedList || []).some(acc => this.normalizeAnswer(acc) === cleanUser);
     },
+    // Tách chuỗi giải thích thô thành 3 phần rõ ràng và chuẩn xác
+    splitExplanationParts(rawExplanation) {
+        if (!rawExplanation) {
+            return { general: '', optionsMeanings: [], reason: '' };
+        }
+
+        let text = rawExplanation.trim();
+        let reason = '';
+        let optionsMeanings = [];
+        let general = '';
+
+        // 1. Tách phần "Lý do:" (nằm ở cuối)
+        const reasonRegex = /(?:^|\n|<br\s*\/?>|\.\s+|;\s*)Lý do\s*:\s*([\s\S]*)$/i;
+        const reasonMatch = text.match(reasonRegex);
+        if (reasonMatch) {
+            reason = reasonMatch[1]
+                .replace(/^<br\s*\/?>/gi, '')
+                .trim();
+            // Cắt bỏ phần Lý do ra khỏi text chính
+            text = text.substring(0, reasonMatch.index).trim();
+        }
+
+        // 2. Tách phần "Nghĩa của các đáp án:"
+        const optRegex = /(?:^|\n|<br\s*\/?>)Nghĩa của các đáp án\s*:\s*([\s\S]*)$/i;
+        const optMatch = text.match(optRegex);
+        if (optMatch) {
+            const optBlock = optMatch[1].trim();
+            // Cắt bỏ phần Nghĩa đáp án ra khỏi text chính -> phần còn lại chính là Giải thích chung
+            general = text.substring(0, optMatch.index).trim();
+
+            // Tách các dòng theo xuống dòng hoặc thẻ <br>
+            const rawLines = optBlock.split(/\r?\n|<br\s*\/?>/gi);
+            optionsMeanings = rawLines
+                .map(l => l.trim())
+                .filter(l => l.length > 0);
+        } else {
+            general = text;
+        }
+
+        // Làm sạch thẻ <br> hoặc dấu câu dư thừa ở cuối general
+        general = general.replace(/(?:<br\s*\/?>|\s)+$/gi, '').trim();
+
+        return { general, optionsMeanings, reason };
+    },
 
     render() {
         const questions = window.GrammarStore ? GrammarStore.getQuestions() : [];
@@ -72,26 +116,45 @@ const grammarDrillView = {
         const userAnswers = window.GrammarStore ? GrammarStore.getUserAnswers() : {};
 
         const currentFolder = appState.grammarFilterFolder || 'all';
+        const currentTopic = appState.grammarFilterTopic || 'all';
         const currentDeck = appState.grammarFilterDeck || 'all';
         const currentType = appState.grammarFilterType || 'all';
 
-        // Lọc danh sách bộ đề hiển thị tương ứng với Thư mục được chọn
-        const availableDecks = currentFolder === 'all' 
-            ? decks 
-            : decks.filter(d => d.folderId === currentFolder);
+        // 1. Lọc danh sách chuyên đề theo thư mục được chọn
+        let availableTopics = [];
+        folders.forEach(f => {
+            if (currentFolder === 'all' || f.id === currentFolder) {
+                if (f.topics) availableTopics.push(...f.topics);
+            }
+        });
 
-        // Lọc câu hỏi ăn khớp với dữ liệu kho đề
+        // 2. Lọc danh sách bộ đề theo thư mục và chuyên đề được chọn
+        let availableDecks = [];
+        let validDeckIds = new Set();
+
+        folders.forEach(f => {
+            if (currentFolder === 'all' || f.id === currentFolder) {
+                (f.topics || []).forEach(t => {
+                    if (currentTopic === 'all' || t.id === currentTopic) {
+                        (t.decks || []).forEach(d => {
+                            availableDecks.push(d);
+                            if (currentDeck === 'all' || d.id === currentDeck) {
+                                validDeckIds.add(d.id);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        // Sắp xếp bộ đề theo A-Z tự nhiên
+        availableDecks.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'vi', { numeric: true, sensitivity: 'base' }));
+
+        // 3. Lọc danh sách câu hỏi phù hợp
         const filtered = questions.filter(q => {
             const matchType = (currentType === 'all') || (q.type === currentType);
-            
-            let matchFolder = true;
-            if (currentFolder !== 'all') {
-                const parentDeck = decks.find(d => d.id === q.deckId);
-                matchFolder = parentDeck && (parentDeck.folderId === currentFolder);
-            }
-
-            const matchDeck = (currentDeck === 'all') || (q.deckId === currentDeck);
-            return matchType && matchFolder && matchDeck;
+            const matchDeck = validDeckIds.has(q.deckId);
+            return matchType && matchDeck;
         });
 
         const answeredCount = Object.keys(userAnswers).filter(id => {
@@ -148,9 +211,9 @@ const grammarDrillView = {
                             </button>
                         </div>
 
-                        <!-- Nhóm Lọc Thư mục và Bộ đề -->
-                        <div class="flex flex-wrap items-center gap-2">
-                            <!-- Lọc theo Thư mục -->
+                        <!-- Nhóm Lọc 3 Cấp: Thư mục -> Chuyên đề -> Bộ đề -->
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <!-- 1. Lọc theo Thư mục -->
                             <div class="flex items-center gap-1.5">
                                 <span class="text-xs font-semibold uppercase text-pink-400 flex items-center gap-1">
                                     <i data-lucide="folder" class="w-3.5 h-3.5"></i> Thư mục:
@@ -161,14 +224,25 @@ const grammarDrillView = {
                                 </select>
                             </div>
 
-                            <!-- Lọc theo Bộ đề -->
+                            <!-- 2. Lọc theo Chuyên đề -->
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-semibold uppercase text-pink-400 flex items-center gap-1">
+                                    <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Chuyên đề:
+                                </span>
+                                <select onchange="grammarDrillView.setTopicFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer max-w-[170px]">
+                                    <option value="all" ${currentTopic === 'all' ? 'selected' : ''}>🔖 Tất cả chuyên đề</option>
+                                    ${availableTopics.map(t => `<option value="${t.id}" ${currentTopic === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                                </select>
+                            </div>
+
+                            <!-- 3. Lọc theo Bộ đề -->
                             <div class="flex items-center gap-1.5">
                                 <span class="text-xs font-semibold uppercase text-pink-400 flex items-center gap-1">
                                     <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Bộ đề:
                                 </span>
-                                <select onchange="grammarDrillView.setDeckFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer max-w-[180px] sm:max-w-xs">
+                                <select onchange="grammarDrillView.setDeckFilter(this.value)" class="text-xs font-medium bg-[#fffafb] border border-pink-200/70 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none cursor-pointer max-w-[190px] truncate">
                                     <option value="all" ${currentDeck === 'all' ? 'selected' : ''}>📖 Tất cả bộ đề</option>
-                                    ${availableDecks.map(d => `<option value="${d.id}" ${currentDeck === d.id ? 'selected' : ''}>${d.folderName ? d.folderName + ' ➔ ' : ''}${d.title}</option>`).join('')}
+                                    ${availableDecks.map(d => `<option value="${d.id}" ${currentDeck === d.id ? 'selected' : ''}>${d.title}</option>`).join('')}
                                 </select>
                             </div>
                         </div>
@@ -275,36 +349,70 @@ const grammarDrillView = {
                                     </div>
                                 `}
 
-                                ${state.submitted ? `
+                                ${state.submitted ? (() => {
+                                    // Bóc tách chính xác các thành phần từ explanation
+                                    const parsed = this.splitExplanationParts(q.explanation);
+
+                                    // Lấy đúng phần giải thích (đã loại bỏ phần nghĩa đáp án và lý do)
+                                    const generalExplanation = parsed.general || (q.optionsMeanings?.length ? q.explanation : '');
+                                    
+                                    // Ưu tiên mảng optionsMeanings đã được parse sạch
+                                    const finalMeanings = (q.optionsMeanings && q.optionsMeanings.length > 0) 
+                                        ? q.optionsMeanings 
+                                        : parsed.optionsMeanings;
+
+                                    // Lấy lý do chuẩn
+                                    const finalReason = q.reason || parsed.reason;
+                                    const defaultReason = `Chọn <strong>${isMC ? (q.correctAnswer || '...') : ((q.acceptedAnswers || [])[0] || '...')}</strong> vì đáp án này phù hợp hoàn toàn với cấu trúc ngữ pháp và nghĩa của ngữ cảnh câu hỏi.`;
+
+                                    return `
                                     <div class="mt-4 pt-4 border-t border-slate-100 space-y-2.5 text-xs sm:text-sm">
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between pb-1">
                                             <div class="flex items-center gap-2">
                                                 <span class="text-slate-600 text-xs">
-                                                    ${isMC ? `Đáp án đúng: <strong class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">${q.correctAnswer}</strong>` : `Đáp án chuẩn: <strong class="text-pink-600 font-mono bg-pink-50 px-2 py-0.5 rounded border border-pink-200">${q.cleanTarget || (q.acceptedAnswers && q.acceptedAnswers[0])}</strong>`}
+                                                    ${isMC ? `Đáp án đúng: <strong class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 font-bold">${q.correctAnswer}</strong>` : `Đáp án chuẩn: <strong class="text-pink-600 font-mono bg-pink-50 px-2.5 py-1 rounded-lg border border-pink-200 font-bold">${q.cleanTarget || (q.acceptedAnswers && q.acceptedAnswers[0])}</strong>`}
                                                 </span>
                                             </div>
                                             <button onclick="grammarDrillView.retryQuestion('${q.id}')" class="text-xs text-pink-500 hover:text-pink-700 font-semibold underline flex items-center gap-1 cursor-pointer">
-                                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                                                 <span>Làm lại câu này</span>
                                             </button>
                                         </div>
+
+                                        <!-- 1. Dịch nghĩa (Màu Xanh lam / Sky) -->
                                         ${q.translation ? `
-                                            <div class="bg-amber-50/70 p-3 rounded-2xl text-slate-800 border border-amber-200/60 text-xs flex items-start gap-2 leading-relaxed">
-                                                <i data-lucide="languages" class="w-4 h-4 text-amber-700 shrink-0 mt-0.5"></i>
-                                                <div>
-                                                    <span class="font-bold text-amber-900">Dịch nghĩa:</span> ${this.formatMarkdown(q.translation)}
+                                            <div class="text-sky-900 bg-sky-50/70 p-3 rounded-2xl border border-sky-200/60 leading-relaxed text-xs">
+                                                <strong class="text-sky-700 font-bold block mb-1">Dịch nghĩa:</strong> 
+                                                <span>${this.formatMarkdown(q.translation)}</span>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- 2. Giải thích (Màu Tím / Purple) -->
+                                        ${generalExplanation ? `
+                                            <div class="text-purple-900 bg-purple-50/70 p-3 rounded-2xl border border-purple-200/60 leading-relaxed text-xs">
+                                                <strong class="text-purple-700 font-bold block mb-1">Giải thích:</strong> 
+                                                <span>${this.formatMarkdown(generalExplanation)}</span>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- 3. Nghĩa của các đáp án (Màu Xanh lá / Emerald) -->
+                                        ${finalMeanings && finalMeanings.length > 0 ? `
+                                            <div class="text-emerald-900 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-200/60 leading-relaxed text-xs space-y-1">
+                                                <strong class="text-emerald-700 font-bold block mb-1">Nghĩa của các đáp án:</strong>
+                                                <div class="grid grid-cols-1 gap-1">
+                                                    ${finalMeanings.map(opt => `<div class="text-emerald-800">${this.formatMarkdown(opt)}</div>`).join('')}
                                                 </div>
                                             </div>
                                         ` : ''}
-                                        <div class="bg-pink-50/50 p-3.5 rounded-2xl text-slate-700 border border-pink-100 leading-relaxed text-xs sm:text-sm flex items-start gap-2">
-                                            <i data-lucide="lightbulb" class="w-4 h-4 text-pink-500 shrink-0 mt-0.5"></i>
-                                            <div>
-                                                <span class="font-bold text-slate-900 block mb-1">Giải thích chi tiết:</span>
-                                                ${this.formatMarkdown(q.explanation || 'Không có giải thích chi tiết.')}
-                                            </div>
+
+                                        <!-- 4. Lý do (Màu Hổ phách / Amber) -->
+                                        <div class="text-amber-900 bg-amber-50/70 p-3 rounded-2xl border border-amber-200/60 leading-relaxed text-xs">
+                                            <strong class="text-amber-700 font-bold block mb-1">Lý do:</strong>
+                                            <span>${this.formatMarkdown(finalReason || defaultReason)}</span>
                                         </div>
                                     </div>
-                                ` : ''}
+                                    `;
+                                })() : ''}
                             </div>
                         `;
                     }).join('')}
@@ -354,11 +462,20 @@ const grammarDrillView = {
         appState.grammarFilterType = type;
         this.refresh();
     },
+
     setFolderFilter(folderId) {
         appState.grammarFilterFolder = folderId;
+        appState.grammarFilterTopic = 'all';
         appState.grammarFilterDeck = 'all';
         this.refresh();
     },
+
+    setTopicFilter(topicId) {
+        appState.grammarFilterTopic = topicId;
+        appState.grammarFilterDeck = 'all';
+        this.refresh();
+    },
+
     setDeckFilter(deckId) {
         appState.grammarFilterDeck = deckId;
         this.refresh();

@@ -23,27 +23,141 @@ const grammarExamView = {
             return cleanAcc === cleanUser;
         });
     },
+    // Tách chuỗi giải thích thô thành 3 phần rõ ràng và chuẩn xác
+    splitExplanationParts(rawExplanation) {
+        if (!rawExplanation) {
+            return { general: '', optionsMeanings: [], reason: '' };
+        }
+
+        let text = rawExplanation.trim();
+        let reason = '';
+        let optionsMeanings = [];
+        let general = '';
+
+        // 1. Tách phần "Lý do:" (ở cuối)
+        const reasonRegex = /(?:^|\n|<br\s*\/?>|\.\s+|;\s*)Lý do\s*:\s*([\s\S]*)$/i;
+        const reasonMatch = text.match(reasonRegex);
+        if (reasonMatch) {
+            reason = reasonMatch[1]
+                .replace(/^<br\s*\/?>/gi, '')
+                .trim();
+            text = text.substring(0, reasonMatch.index).trim();
+        }
+
+        // 2. Tách phần "Nghĩa của các đáp án:"
+        const optRegex = /(?:^|\n|<br\s*\/?>)Nghĩa của các đáp án\s*:\s*([\s\S]*)$/i;
+        const optMatch = text.match(optRegex);
+        if (optMatch) {
+            const optBlock = optMatch[1].trim();
+            general = text.substring(0, optMatch.index).trim();
+
+            const rawLines = optBlock.split(/\r?\n|<br\s*\/?>/gi);
+            optionsMeanings = rawLines
+                .map(l => l.trim())
+                .filter(l => l.length > 0);
+        } else {
+            general = text;
+        }
+
+        general = general.replace(/(?:<br\s*\/?>|\s)+$/gi, '').trim();
+
+        return { general, optionsMeanings, reason };
+    },
+    
+    onFolderChange(folderId) {
+        const folders = window.GrammarStore 
+            ? (typeof GrammarStore.getFolders === 'function' 
+                ? GrammarStore.getFolders() 
+                : [...(GrammarStore.getCommunityFolders?.() || []), ...(GrammarStore.getMyFolders?.() || [])])
+            : [];
+        
+        const topicSelect = document.getElementById('examTopicSelect');
+        const deckSelect = document.getElementById('examDeckSelect');
+        if (!topicSelect || !deckSelect) return;
+
+        let topics = [];
+        if (folderId === 'all') {
+            folders.forEach(f => {
+                if (f.topics) topics.push(...f.topics);
+            });
+        } else {
+            const folder = folders.find(f => f.id === folderId);
+            topics = folder ? (folder.topics || []) : [];
+        }
+
+        topicSelect.innerHTML = `<option value="all">Tất cả chuyên đề</option>` + 
+            topics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+        this.onTopicChange(topicSelect.value);
+    },
+
+    onTopicChange(topicId) {
+        const folders = window.GrammarStore 
+            ? (typeof GrammarStore.getFolders === 'function' 
+                ? GrammarStore.getFolders() 
+                : [...(GrammarStore.getCommunityFolders?.() || []), ...(GrammarStore.getMyFolders?.() || [])])
+            : [];
+        const folderId = document.getElementById('examFolderSelect')?.value || 'all';
+        const deckSelect = document.getElementById('examDeckSelect');
+        if (!deckSelect) return;
+
+        let decks = [];
+
+        folders.forEach(f => {
+            if (folderId === 'all' || f.id === folderId) {
+                (f.topics || []).forEach(t => {
+                    if (topicId === 'all' || t.id === topicId) {
+                        (t.decks || []).forEach(d => {
+                            decks.push(d);
+                        });
+                    }
+                });
+            }
+        });
+
+        // Sắp xếp tự nhiên A-Z
+        decks.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'vi', { numeric: true, sensitivity: 'base' }));
+
+        deckSelect.innerHTML = `<option value="all">Tất cả bộ đề</option>` + 
+            decks.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
+    },
 
     startTest() {
         this.isSubmitted = false;
         this.examAnswers = {};
         const questions = window.GrammarStore ? GrammarStore.getQuestions() : [];
-        const decks = window.GrammarStore ? GrammarStore.getDecks() : [];
+        const folders = window.GrammarStore 
+            ? (typeof GrammarStore.getFolders === 'function' 
+                ? GrammarStore.getFolders() 
+                : [...(GrammarStore.getCommunityFolders?.() || []), ...(GrammarStore.getMyFolders?.() || [])])
+            : [];
 
         const folderSel = document.getElementById('examFolderSelect')?.value || 'all';
+        const topicSel = document.getElementById('examTopicSelect')?.value || 'all';
         const deckSel = document.getElementById('examDeckSelect')?.value || 'all';
         const typeSel = document.getElementById('examTypeSelect')?.value || 'all';
         const countSel = document.getElementById('examCountSelect')?.value || '10';
 
-        let pool = questions.filter(q => {
-            let matchFolder = true;
-            if (folderSel !== 'all') {
-                const parentDeck = decks.find(d => d.id === q.deckId);
-                matchFolder = parentDeck && (parentDeck.folderId === folderSel);
+        // Lấy danh sách ID các bộ đề thỏa mãn bộ lọc 3 cấp
+        let validDeckIds = new Set();
+        folders.forEach(f => {
+            if (folderSel === 'all' || f.id === folderSel) {
+                (f.topics || []).forEach(t => {
+                    if (topicSel === 'all' || t.id === topicSel) {
+                        (t.decks || []).forEach(d => {
+                            if (deckSel === 'all' || d.id === deckSel) {
+                                validDeckIds.add(d.id);
+                            }
+                        });
+                    }
+                });
             }
-            let matchDeck = (deckSel === 'all') || (q.deckId === deckSel);
+        });
+
+        let pool = questions.filter(q => {
+            let matchDeck = validDeckIds.has(q.deckId);
             let matchType = (typeSel === 'all') || (q.type === typeSel);
-            return matchFolder && matchDeck && matchType;
+            return matchDeck && matchType;
         });
 
         if (pool.length === 0) {
@@ -151,28 +265,54 @@ const grammarExamView = {
                         </div>
                     </div>
 
-                    <!-- Thanh cấu hình -->
-                    <div class="pt-4 border-t border-pink-100 grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
+                    <!-- Thanh cấu hình (Tách rõ 3 cấp: Thư mục -> Chuyên đề -> Bộ đề) -->
+                    <div class="pt-4 border-t border-pink-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                        <!-- 1. Thư mục -->
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1 flex items-center space-x-1">
                                 <i data-lucide="folder" class="w-3.5 h-3.5 text-pink-500"></i>
-                                <span>Nguồn thư mục:</span>
+                                <span>1. Nguồn thư mục:</span>
                             </label>
-                            <select id="examFolderSelect" class="w-full text-xs font-medium bg-[#fffafb] border border-pink-200 rounded-xl p-2 text-slate-700 focus:outline-none">
+                            <select id="examFolderSelect" onchange="grammarExamView.onFolderChange(this.value)" class="w-full text-xs font-medium bg-[#fffafb] border border-pink-200 rounded-xl p-2 text-slate-700 focus:outline-none">
                                 <option value="all">Tất cả thư mục</option>
                                 ${folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
                             </select>
                         </div>
+
+                        <!-- 2. Chuyên đề -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1 flex items-center space-x-1">
+                                <i data-lucide="bookmark" class="w-3.5 h-3.5 text-pink-500"></i>
+                                <span>2. Chuyên đề:</span>
+                            </label>
+                            <select id="examTopicSelect" onchange="grammarExamView.onTopicChange(this.value)" class="w-full text-xs font-medium bg-[#fffafb] border border-pink-200 rounded-xl p-2 text-slate-700 focus:outline-none">
+                                <option value="all">Tất cả chuyên đề</option>
+                                ${(() => {
+                                    let allTopics = [];
+                                    folders.forEach(f => (f.topics || []).forEach(t => allTopics.push(t)));
+                                    return allTopics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                                })()}
+                            </select>
+                        </div>
+
+                        <!-- 3. Bộ đề -->
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1 flex items-center space-x-1">
                                 <i data-lucide="book-open" class="w-3.5 h-3.5 text-pink-500"></i>
-                                <span>Chọn bộ đề:</span>
+                                <span>3. Chọn bộ đề:</span>
                             </label>
                             <select id="examDeckSelect" class="w-full text-xs font-medium bg-[#fffafb] border border-pink-200 rounded-xl p-2 text-slate-700 focus:outline-none">
                                 <option value="all">Tất cả bộ đề</option>
-                                ${decks.map(d => `<option value="${d.id}">${d.folderName ? d.folderName + ' ➔ ' : ''}${d.title}</option>`).join('')}
+                                ${(() => {
+                                    let allDecks = [];
+                                    folders.forEach(f => (f.topics || []).forEach(t => (t.decks || []).forEach(d => allDecks.push(d))));
+                                    allDecks.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'vi', { numeric: true, sensitivity: 'base' }));
+                                    return allDecks.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
+                                })()}
                             </select>
                         </div>
+
+                        <!-- 4. Dạng bài -->
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1 flex items-center space-x-1">
                                 <i data-lucide="layers" class="w-3.5 h-3.5 text-pink-500"></i>
@@ -184,10 +324,12 @@ const grammarExamView = {
                                 <option value="written">Chỉ tự luận</option>
                             </select>
                         </div>
+
+                        <!-- 5. Số lượng câu + Nút bắt đầu -->
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1 flex items-center space-x-1">
                                 <i data-lucide="hash" class="w-3.5 h-3.5 text-pink-500"></i>
-                                <span>Số lượng câu:</span>
+                                <span>Số câu:</span>
                             </label>
                             <div class="flex gap-2">
                                 <select id="examCountSelect" class="flex-1 text-xs font-medium bg-[#fffafb] border border-pink-200 rounded-xl p-2 text-slate-700 focus:outline-none">
@@ -349,33 +491,60 @@ const grammarExamView = {
                                     </div>
                                 `}
 
-                                <!-- Giải thích chi tiết sau khi nộp bài -->
-                                ${this.isSubmitted ? `
+                                <!-- 4 Khung giải thích chi tiết sau khi nộp bài -->
+                                ${this.isSubmitted ? (() => {
+                                    const parsed = this.splitExplanationParts(q.explanation);
+                                    const generalExplanation = parsed.general || (q.optionsMeanings?.length ? q.explanation : '');
+                                    const finalMeanings = (q.optionsMeanings && q.optionsMeanings.length > 0) 
+                                        ? q.optionsMeanings 
+                                        : parsed.optionsMeanings;
+                                    const finalReason = q.reason || parsed.reason;
+                                    const defaultReason = `Chọn <strong>${isMC ? (q.correctAnswer || '...') : ((q.acceptedAnswers || [])[0] || '...')}</strong> vì đáp án này phù hợp hoàn toàn với cấu trúc ngữ pháp và nghĩa của ngữ cảnh câu hỏi.`;
+
+                                    return `
                                     <div class="mt-4 pt-4 border-t border-slate-100 space-y-2.5 text-xs sm:text-sm">
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between pb-1">
                                             <div class="flex items-center gap-2">
                                                 <span class="text-slate-600 text-xs">
-                                                    ${isMC ? `Đáp án đúng: <strong class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">${q.correctAnswer}</strong>` : `Đáp án chuẩn: <strong class="text-pink-600 font-mono bg-pink-50 px-2 py-0.5 rounded border border-pink-200">${q.cleanTarget || (q.acceptedAnswers && q.acceptedAnswers[0])}</strong>`}
+                                                    ${isMC ? `Đáp án đúng: <strong class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 font-bold">${q.correctAnswer}</strong>` : `Đáp án chuẩn: <strong class="text-pink-600 font-mono bg-pink-50 px-2.5 py-1 rounded-lg border border-pink-200 font-bold">${q.cleanTarget || (q.acceptedAnswers && q.acceptedAnswers[0])}</strong>`}
                                                 </span>
                                             </div>
                                         </div>
+
+                                        <!-- 1. Dịch nghĩa (Màu Xanh lam / Sky) -->
                                         ${q.translation ? `
-                                            <div class="bg-amber-50/70 p-3 rounded-2xl text-slate-800 border border-amber-200/60 text-xs flex items-start gap-2 leading-relaxed">
-                                                <i data-lucide="languages" class="w-4 h-4 text-amber-700 shrink-0 mt-0.5"></i>
-                                                <div>
-                                                    <span class="font-bold text-amber-900">Dịch nghĩa:</span> ${this.formatMarkdown(q.translation)}
+                                            <div class="text-sky-900 bg-sky-50/70 p-3 rounded-2xl border border-sky-200/60 leading-relaxed text-xs">
+                                                <strong class="text-sky-700 font-bold block mb-1">Dịch nghĩa:</strong> 
+                                                <span>${this.formatMarkdown(q.translation)}</span>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- 2. Giải thích (Màu Tím / Purple) -->
+                                        ${generalExplanation ? `
+                                            <div class="text-purple-900 bg-purple-50/70 p-3 rounded-2xl border border-purple-200/60 leading-relaxed text-xs">
+                                                <strong class="text-purple-700 font-bold block mb-1">Giải thích:</strong> 
+                                                <span>${this.formatMarkdown(generalExplanation)}</span>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- 3. Nghĩa của các đáp án (Màu Xanh lá / Emerald) -->
+                                        ${finalMeanings && finalMeanings.length > 0 ? `
+                                            <div class="text-emerald-900 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-200/60 leading-relaxed text-xs space-y-1">
+                                                <strong class="text-emerald-700 font-bold block mb-1">Nghĩa của các đáp án:</strong>
+                                                <div class="grid grid-cols-1 gap-1">
+                                                    ${finalMeanings.map(opt => `<div class="text-emerald-800">${this.formatMarkdown(opt)}</div>`).join('')}
                                                 </div>
                                             </div>
                                         ` : ''}
-                                        <div class="bg-pink-50/50 p-3.5 rounded-2xl text-slate-700 border border-pink-100 leading-relaxed text-xs sm:text-sm flex items-start gap-2">
-                                            <i data-lucide="lightbulb" class="w-4 h-4 text-pink-500 shrink-0 mt-0.5"></i>
-                                            <div>
-                                                <span class="font-bold text-slate-900 block mb-1">Giải thích chi tiết:</span>
-                                                ${this.formatMarkdown(q.explanation || 'Không có giải thích chi tiết.')}
-                                            </div>
+
+                                        <!-- 4. Lý do (Màu Hổ phách / Amber) -->
+                                        <div class="text-amber-900 bg-amber-50/70 p-3 rounded-2xl border border-amber-200/60 leading-relaxed text-xs">
+                                            <strong class="text-amber-700 font-bold block mb-1">Lý do:</strong>
+                                            <span>${this.formatMarkdown(finalReason || defaultReason)}</span>
                                         </div>
                                     </div>
-                                ` : ''}
+                                    `;
+                                })() : ''}
                             </div>
                         `;
                     }).join('')}
